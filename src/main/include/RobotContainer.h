@@ -28,4 +28,8 @@ class RobotContainer {
   Drivetrain m_drivetrain;
   Turret m_turret;
   Vision m_vision;
+
+  // Va al final a proposito: guarda referencias a los tres subsistemas de
+  // arriba, y los miembros se construyen en orden de declaracion.
+  Dashboard m_dashboard{m_drivetrain, m_turret, m_vision};
 };

@@ -1,0 +1,547 @@
+{
+  "version": 1.0,
+  "grid_size": 128,
+  "tabs": [
+    {
+      "name": "Partido",
+      "grid_layout": {
+        "layouts": [],
+        "containers": [
+          {
+            "title": "BATERIA",
+            "x": 0.0,
+            "y": 0.0,
+            "width": 384.0,
+            "height": 384.0,
+            "type": "Radial Gauge",
+            "properties": {
+              "topic": "/SmartDashboard/Piloto/Bateria",
+              "period": 0.06,
+              "data_type": "double",
+              "start_angle": -140.0,
+              "end_angle": 140.0,
+              "min_value": 6.0,
+              "max_value": 13.0,
+              "number_of_labels": 8,
+              "wrap_value": false,
+              "show_pointer": true,
+              "show_ticks": true
+            }
+          },
+          {
+            "title": "POTENCIA PLENA",
+            "x": 384.0,
+            "y": 0.0,
+            "width": 256.0,
+            "height": 384.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/SmartDashboard/Piloto/PotenciaPlena",
+              "period": 0.06,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294942720,
+              "true_icon": "None",
+              "false_icon": "Exclamation Point"
+            }
+          },
+          {
+            "title": "VE EL TAG",
+            "x": 640.0,
+            "y": 0.0,
+            "width": 256.0,
+            "height": 384.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/SmartDashboard/Piloto/VeTag",
+              "period": 0.06,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "Checkmark",
+              "false_icon": "X"
+            }
+          },
+          {
+            "title": "LANZADOR LISTO",
+            "x": 896.0,
+            "y": 0.0,
+            "width": 256.0,
+            "height": 384.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/SmartDashboard/Piloto/LanzadorListo",
+              "period": 0.06,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "Checkmark",
+              "false_icon": "X"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Pits",
+      "grid_layout": {
+        "layouts": [],
+        "containers": [
+          {
+            "title": "Voltaje de bateria",
+            "x": 0.0,
+            "y": 0.0,
+            "width": 512.0,
+            "height": 256.0,
+            "type": "Graph",
+            "properties": {
+              "topic": "/SmartDashboard/Bateria/Voltaje",
+              "period": 0.06,
+              "data_type": "double",
+              "time_displayed": 15.0,
+              "min_value": 6.0,
+              "max_value": 13.5,
+              "color": 4280391411,
+              "line_width": 2.0
+            }
+          },
+          {
+            "title": "Corriente total de traccion (A)",
+            "x": 512.0,
+            "y": 0.0,
+            "width": 512.0,
+            "height": 256.0,
+            "type": "Graph",
+            "properties": {
+              "topic": "/SmartDashboard/Drivetrain/CorrienteTotal",
+              "period": 0.06,
+              "data_type": "double",
+              "time_displayed": 15.0,
+              "min_value": 0.0,
+              "max_value": 180.0,
+              "color": 4294930499,
+              "line_width": 2.0
+            }
+          },
+          {
+            "title": "Potencia (%)",
+            "x": 1024.0,
+            "y": 0.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Number Bar",
+            "properties": {
+              "topic": "/SmartDashboard/Piloto/PotenciaPct",
+              "period": 0.1,
+              "data_type": "double",
+              "min_value": 0.0,
+              "max_value": 100.0,
+              "divisions": 5,
+              "inverted": false,
+              "orientation": "vertical"
+            }
+          },
+          {
+            "title": "Lanzador (RPM)",
+            "x": 0.0,
+            "y": 256.0,
+            "width": 512.0,
+            "height": 256.0,
+            "type": "Graph",
+            "properties": {
+              "topic": "/SmartDashboard/Torreta/LanzadorRPM",
+              "period": 0.06,
+              "data_type": "double",
+              "time_displayed": 15.0,
+              "min_value": 0.0,
+              "max_value": 3000.0,
+              "color": 4278238420,
+              "line_width": 2.0
+            }
+          },
+          {
+            "title": "Lanzador (A)",
+            "x": 512.0,
+            "y": 256.0,
+            "width": 512.0,
+            "height": 256.0,
+            "type": "Graph",
+            "properties": {
+              "topic": "/SmartDashboard/Torreta/LanzadorAmps",
+              "period": 0.06,
+              "data_type": "double",
+              "time_displayed": 15.0,
+              "min_value": 0.0,
+              "max_value": 60.0,
+              "color": 4294930499,
+              "line_width": 2.0
+            }
+          },
+          {
+            "title": "Torreta (grados)",
+            "x": 1024.0,
+            "y": 256.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Radial Gauge",
+            "properties": {
+              "topic": "/SmartDashboard/Torreta/AnguloGrados",
+              "period": 0.1,
+              "data_type": "double",
+              "start_angle": -110.0,
+              "end_angle": 110.0,
+              "min_value": -110.0,
+              "max_value": 110.0,
+              "number_of_labels": 5,
+              "wrap_value": false,
+              "show_pointer": true,
+              "show_ticks": true
+            }
+          },
+          {
+            "title": "Giroscopio",
+            "x": 0.0,
+            "y": 512.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/SmartDashboard/Drivetrain/GiroscopioConectado",
+              "period": 0.1,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "None",
+              "false_icon": "Exclamation Point"
+            }
+          },
+          {
+            "title": "Heading (grados)",
+            "x": 256.0,
+            "y": 512.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Radial Gauge",
+            "properties": {
+              "topic": "/SmartDashboard/Drivetrain/HeadingGrados",
+              "period": 0.1,
+              "data_type": "double",
+              "start_angle": -180.0,
+              "end_angle": 180.0,
+              "min_value": -180.0,
+              "max_value": 180.0,
+              "number_of_labels": 8,
+              "wrap_value": true,
+              "show_pointer": true,
+              "show_ticks": true
+            }
+          },
+          {
+            "title": "Encoder torreta OK",
+            "x": 512.0,
+            "y": 512.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/SmartDashboard/Torreta/EncoderOK",
+              "period": 0.1,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "None",
+              "false_icon": "Exclamation Point"
+            }
+          },
+          {
+            "title": "Limite adelante",
+            "x": 768.0,
+            "y": 512.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/SmartDashboard/Torreta/LimiteAdelante",
+              "period": 0.1,
+              "data_type": "boolean",
+              "true_color": 4294942720,
+              "false_color": 4283215696,
+              "true_icon": "Checkmark",
+              "false_icon": "None"
+            }
+          },
+          {
+            "title": "Limite atras",
+            "x": 1024.0,
+            "y": 512.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/SmartDashboard/Torreta/LimiteAtras",
+              "period": 0.1,
+              "data_type": "boolean",
+              "true_color": 4294942720,
+              "false_color": 4283215696,
+              "true_icon": "Checkmark",
+              "false_icon": "None"
+            }
+          },
+          {
+            "title": "Ve tag",
+            "x": 0.0,
+            "y": 768.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/SmartDashboard/Vision/VeTag",
+              "period": 0.1,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "Checkmark",
+              "false_icon": "X"
+            }
+          },
+          {
+            "title": "Tag ID",
+            "x": 256.0,
+            "y": 768.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/SmartDashboard/Vision/TagID",
+              "period": 0.1,
+              "data_type": "double",
+              "show_submit_button": false
+            }
+          },
+          {
+            "title": "Distancia (m)",
+            "x": 512.0,
+            "y": 768.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/SmartDashboard/Vision/DistanciaMetros",
+              "period": 0.1,
+              "data_type": "double",
+              "show_submit_button": false
+            }
+          },
+          {
+            "title": "Offset (grados)",
+            "x": 768.0,
+            "y": 768.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/SmartDashboard/Vision/OffsetGrados",
+              "period": 0.1,
+              "data_type": "double",
+              "show_submit_button": false
+            }
+          },
+          {
+            "title": "Geometria de camara medida",
+            "x": 1024.0,
+            "y": 768.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/SmartDashboard/Vision/GeometriaMedida",
+              "period": 0.1,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294942720,
+              "true_icon": "None",
+              "false_icon": "Exclamation Point"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Calibracion",
+      "grid_layout": {
+        "layouts": [],
+        "containers": [
+          {
+            "title": "Todo alineado",
+            "x": 0.0,
+            "y": 0.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/SmartDashboard/Calibracion/TodoAlineado",
+              "period": 0.1,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "Checkmark",
+              "false_icon": "X"
+            }
+          },
+          {
+            "title": "Codigo para pegar en Constants.h",
+            "x": 256.0,
+            "y": 0.0,
+            "width": 640.0,
+            "height": 256.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/SmartDashboard/Calibracion/CodigoParaPegar",
+              "period": 0.2,
+              "data_type": "string",
+              "show_submit_button": false
+            }
+          },
+          {
+            "title": "Torreta (rotaciones crudas)",
+            "x": 896.0,
+            "y": 0.0,
+            "width": 384.0,
+            "height": 256.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/SmartDashboard/Calibracion/TorretaRotaciones",
+              "period": 0.2,
+              "data_type": "double",
+              "show_submit_button": false
+            }
+          },
+          {
+            "title": "FrontLeft alineada",
+            "x": 0.0,
+            "y": 256.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/SmartDashboard/Calibracion/FrontLeftAlineada",
+              "period": 0.2,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "Checkmark",
+              "false_icon": "X"
+            }
+          },
+          {
+            "title": "FrontRight alineada",
+            "x": 256.0,
+            "y": 256.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/SmartDashboard/Calibracion/FrontRightAlineada",
+              "period": 0.2,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "Checkmark",
+              "false_icon": "X"
+            }
+          },
+          {
+            "title": "BackLeft alineada",
+            "x": 512.0,
+            "y": 256.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/SmartDashboard/Calibracion/BackLeftAlineada",
+              "period": 0.2,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "Checkmark",
+              "false_icon": "X"
+            }
+          },
+          {
+            "title": "BackRight alineada",
+            "x": 768.0,
+            "y": 256.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/SmartDashboard/Calibracion/BackRightAlineada",
+              "period": 0.2,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "Checkmark",
+              "false_icon": "X"
+            }
+          },
+          {
+            "title": "FrontLeft error (grados)",
+            "x": 0.0,
+            "y": 512.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/SmartDashboard/Calibracion/FrontLeftErrorGrados",
+              "period": 0.2,
+              "data_type": "double",
+              "show_submit_button": false
+            }
+          },
+          {
+            "title": "FrontRight error (grados)",
+            "x": 256.0,
+            "y": 512.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/SmartDashboard/Calibracion/FrontRightErrorGrados",
+              "period": 0.2,
+              "data_type": "double",
+              "show_submit_button": false
+            }
+          },
+          {
+            "title": "BackLeft error (grados)",
+            "x": 512.0,
+            "y": 512.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/SmartDashboard/Calibracion/BackLeftErrorGrados",
+              "period": 0.2,
+              "data_type": "double",
+              "show_submit_button": false
+            }
+          },
+          {
+            "title": "BackRight error (grados)",
+            "x": 768.0,
+            "y": 512.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/SmartDashboard/Calibracion/BackRightErrorGrados",
+              "period": 0.2,
+              "data_type": "double",
+              "show_submit_button": false
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

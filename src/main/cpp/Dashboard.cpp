@@ -33,10 +33,12 @@ void Dashboard::PublishBoolean(std::string_view key, bool value,
 }
 
 void Dashboard::Periodic() {
+  // El CommandScheduler no promete en que orden corre los Periodic() de los
+  // subsistemas, asi que esta escala puede venir del ciclo pasado. Da igual:
+  // 20 ms de retraso en una luz no los ve nadie, y la guardia de voltaje se
+  // mueve en decimas de segundo.
   const double voltageScale = m_drivetrain.GetVoltageScale();
 
-  // El Drivetrain se registro antes que nosotros, asi que su Periodic ya
-  // corrio en este ciclo y la escala es de ahorita, no del ciclo pasado.
   const bool fullPower = voltageScale >= constants::oi::kFullPowerThreshold;
   const bool seesTag = m_vision.HasTarget();
   const bool shooterReady =

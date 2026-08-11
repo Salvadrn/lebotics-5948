@@ -23,8 +23,15 @@ void RobotContainer::ConfigureBindings() {
     return m_vision.GetTurretTargetAngle(m_turret.GetAngle());
   }));
 
+  // El setpoint del lanzador no lo expone el Turret, y quien lo sabe es el
+  // binding. Se lo pasamos al dashboard para que la luz de "listo" signifique
+  // "llego a lo que le pediste" y no "el volante trae inercia".
   m_operator.Y().WhileTrue(
-      m_turret.SpinUp(constants::turret::kShooterIdleSpeed));
+      m_turret.SpinUp(constants::turret::kShooterIdleSpeed)
+          .BeforeStarting([this] {
+            m_dashboard.SetShooterTarget(constants::turret::kShooterIdleSpeed);
+          })
+          .FinallyDo([this](bool) { m_dashboard.SetShooterTarget(0_rpm); }));
 
   m_operator.B().OnTrue(m_turret.StopAll());
 }

@@ -149,6 +149,7 @@ El procedimiento está en [`docs/04-calibracion.md`](docs/04-calibracion.md).
 | [`docs/04-calibracion.md`](docs/04-calibracion.md) | **Obligatorio antes de manejar**: offsets de los encoders |
 | [`docs/05-corriente-y-brownout.md`](docs/05-corriente-y-brownout.md) | Por qué se apaga el robot y cómo lo evitamos |
 | [`docs/06-baterias.md`](docs/06-baterias.md) | Probar baterías con probador de carga y cuáles retirar |
+| [`docs/10-dashboard.md`](docs/10-dashboard.md) | Las cuatro cosas que el piloto lee en partido y cómo cargar el layout de Elastic |
 | [`docs/roles/`](docs/roles/) | Cómo se reparte el trabajo entre el equipo de software |
 
 ## Cómo trabajamos
@@ -169,6 +170,10 @@ código de movimiento.
 - [ ] Offsets de encoders calibrados ← **lo primero que hay que hacer**
 - [ ] Caracterización con SysId (kS/kV/kA reales)
 - [ ] Autónomo (falta elegir PathPlanner o Choreo)
+- [x] Dashboard del piloto: cuatro indicadores y layout de Elastic en el deploy
+      ([`docs/10-dashboard.md`](docs/10-dashboard.md))
+- [ ] Fallback a robot-relative si se cae el giroscopio (y su foco en la pestaña de Partido)
+- [ ] Deadband y curva de respuesta ajustadas con el piloto real manejando
 
 ## Licencia
 
