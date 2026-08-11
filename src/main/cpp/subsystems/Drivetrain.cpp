@@ -1,16 +1,28 @@
 #include "subsystems/Drivetrain.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <cstddef>
 #include <numbers>
+#include <string>
 
+#include <fmt/format.h>
 #include <frc/RobotController.h>
 #include <frc/smartdashboard/SmartDashboard.h>
 #include <frc2/command/Commands.h>
+#include <units/angle.h>
+#include <units/math.h>
 
 #include "Constants.h"
 
 namespace {
+
+// La telemetria de calibracion se publica cada N ciclos de 20 ms.
+constexpr int kCalibrationDecimation = 10;
+
+// Que tan cerca del frente cuenta como "alineada" en el paso de verificacion.
+constexpr units::degree_t kAlignmentTolerance = 2_deg;
 
 double ApplyResponseCurve(double raw, double deadband) {
   const double magnitude = std::abs(raw);
@@ -93,18 +105,59 @@ void Drivetrain::PublishTelemetry() {
   frc::SmartDashboard::PutNumber("Drivetrain/HeadingGrados",
                                  GetHeading().Degrees().value());
 
-  frc::SmartDashboard::PutNumber(
-      "Calibracion/FrontLeftRotaciones",
-      m_frontLeft.GetSteerAngle().value() / (2.0 * std::numbers::pi));
-  frc::SmartDashboard::PutNumber(
-      "Calibracion/FrontRightRotaciones",
-      m_frontRight.GetSteerAngle().value() / (2.0 * std::numbers::pi));
-  frc::SmartDashboard::PutNumber(
-      "Calibracion/BackLeftRotaciones",
-      m_backLeft.GetSteerAngle().value() / (2.0 * std::numbers::pi));
-  frc::SmartDashboard::PutNumber(
-      "Calibracion/BackRightRotaciones",
-      m_backRight.GetSteerAngle().value() / (2.0 * std::numbers::pi));
+  PublishCalibrationTelemetry();
+}
+
+// La calibracion se lee a ojo desde el dashboard, no necesita 50 Hz. Corre a 5
+// para no gastar CPU del roboRIO 1 ni ancho de banda de NetworkTables en match.
+void Drivetrain::PublishCalibrationTelemetry() {
+  if (++m_calibrationDivider < kCalibrationDecimation) {
+    return;
+  }
+  m_calibrationDivider = 0;
+
+  const std::array<SwerveModule*, 4> modules{&m_frontLeft, &m_frontRight,
+                                             &m_backLeft, &m_backRight};
+
+  std::array<double, 4> suggested{};
+  bool allAligned = true;
+
+  for (size_t i = 0; i < modules.size(); ++i) {
+    SwerveModule* module = modules[i];
+    const std::string prefix = fmt::format("Calibracion/{}", module->GetName());
+
+    // El offset a escribir en Constants.h es la lectura cruda con la rueda
+    // apuntando al frente. Sirve tambien si ya hay un offset aplicado.
+    suggested[i] = module->GetRawAbsolutePosition().value();
+
+    const units::degree_t error = module->GetAlignmentError();
+    const bool aligned =
+        units::math::abs(error) <= kAlignmentTolerance;
+    allAligned = allAligned && aligned;
+
+    frc::SmartDashboard::PutNumber(
+        prefix + "Rotaciones",
+        module->GetSteerAngle().value() / (2.0 * std::numbers::pi));
+    frc::SmartDashboard::PutNumber(prefix + "OffsetSugerido", suggested[i]);
+    frc::SmartDashboard::PutNumber(prefix + "ErrorGrados", error.value());
+    frc::SmartDashboard::PutBoolean(prefix + "Alineada", aligned);
+    frc::SmartDashboard::PutBoolean(prefix + "EncoderFalla",
+                                    module->IsSteerEncoderFaulted());
+    frc::SmartDashboard::PutBoolean(prefix + "EncoderSeMovio",
+                                    module->HasSteerEncoderMoved());
+  }
+
+  frc::SmartDashboard::PutBoolean("Calibracion/TodoAlineado", allAligned);
+
+  // Bloque listo para pegar en Constants.h. Copiarlo a mano de cuatro numeros
+  // sueltos es de donde salen los errores de transcripcion.
+  frc::SmartDashboard::PutString(
+      "Calibracion/CodigoParaPegar",
+      fmt::format("inline constexpr units::turn_t kFrontLeft = {:.4f}_tr;\n"
+                  "inline constexpr units::turn_t kFrontRight = {:.4f}_tr;\n"
+                  "inline constexpr units::turn_t kBackLeft = {:.4f}_tr;\n"
+                  "inline constexpr units::turn_t kBackRight = {:.4f}_tr;",
+                  suggested[0], suggested[1], suggested[2], suggested[3]));
 }
 
 void Drivetrain::Drive(units::meters_per_second_t xSpeed,

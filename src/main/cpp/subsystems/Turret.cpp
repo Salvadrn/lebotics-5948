@@ -14,8 +14,12 @@
 namespace {
 constexpr int kConfigAttempts = 5;
 
-units::turn_t ToTurns(units::degree_t angle) {
-  return units::turn_t{angle.value() / 360.0};
+// Único lugar donde se recorta un ángulo pedido. SetAngle e IsAtAngle tienen que
+// usar el mismo, o GoToAngle a un ángulo fuera de rango se queda esperando para
+// siempre a llegar a donde nunca va a poder llegar.
+units::degree_t ClampToCommandRange(units::degree_t angle) {
+  return std::clamp(angle, constants::turret::kMinCommandAngle,
+                    constants::turret::kMaxCommandAngle);
 }
 
 units::degree_t ToDegrees(units::turn_t turns) {
@@ -42,7 +46,11 @@ Turret::Turret()
                  ctre::phoenix6::CANBus{constants::can::kBus}},
       m_azimuthPosition{m_azimuth.GetPosition()},
       m_shooterVelocity{m_shooter.GetVelocity()},
-      m_shooterCurrent{m_shooter.GetSupplyCurrent()} {
+      m_shooterCurrent{m_shooter.GetSupplyCurrent()},
+      m_cancoderAbsolute{m_cancoder.GetAbsolutePosition()},
+      m_forwardSoftLimit{m_azimuth.GetFault_ForwardSoftLimit()},
+      m_reverseSoftLimit{m_azimuth.GetFault_ReverseSoftLimit()},
+      m_remoteSensorInvalid{m_azimuth.GetFault_RemoteSensorDataInvalid()} {
   SetName("Turret");
   ConfigureCancoder();
   ConfigureAzimuth();
@@ -63,6 +71,8 @@ void Turret::ConfigureCancoder() {
       break;
     }
   }
+
+  m_cancoderAbsolute.SetUpdateFrequency(50_Hz);
 }
 
 void Turret::ConfigureAzimuth() {
@@ -84,18 +94,24 @@ void Turret::ConfigureAzimuth() {
   config.CurrentLimits.StatorCurrentLimit = constants::power::kTurretStatorLimit;
   config.CurrentLimits.StatorCurrentLimitEnable = true;
 
+  // Los umbrales están en rotaciones del mecanismo. Con RemoteCANcoder y
+  // SensorToMechanismRatio en 1.0, la posición que reporta el TalonFX es la del
+  // CANcoder tal cual, que está en el eje de la torreta — así que una rotación
+  // del umbral es una rotación de la torreta.
+  //
+  // Se asignan en grados a propósito: la librería de unidades hace la
+  // conversión y el compilador la revisa. Dividir entre 360 a mano compila igual
+  // aunque el número esté mal.
   config.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
   config.SoftwareLimitSwitch.ForwardSoftLimitThreshold =
-      ToTurns(constants::turret::kMaxAngle);
+      constants::turret::kMaxAngle;
   config.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
   config.SoftwareLimitSwitch.ReverseSoftLimitThreshold =
-      ToTurns(constants::turret::kMinAngle);
+      constants::turret::kMinAngle;
 
-  config.MotionMagic.MotionMagicCruiseVelocity = units::turns_per_second_t{
-      constants::turret::kMaxVelocity.value() / 360.0};
+  config.MotionMagic.MotionMagicCruiseVelocity = constants::turret::kMaxVelocity;
   config.MotionMagic.MotionMagicAcceleration =
-      units::turns_per_second_squared_t{
-          constants::turret::kMaxAcceleration.value() / (2.0 * M_PI)};
+      constants::turret::kMaxAcceleration;
 
   config.Slot0.kS = constants::gains::kTurretS;
   config.Slot0.kV = constants::gains::kTurretV;
@@ -109,7 +125,13 @@ void Turret::ConfigureAzimuth() {
     }
   }
 
+  // Antes de OptimizeBusUtilization: lo que no tenga frecuencia explícita se cae
+  // a 4 Hz, y a 4 Hz no se alcanza a ver cuál límite se disparó empujando la
+  // torreta a mano.
   m_azimuthPosition.SetUpdateFrequency(100_Hz);
+  m_forwardSoftLimit.SetUpdateFrequency(20_Hz);
+  m_reverseSoftLimit.SetUpdateFrequency(20_Hz);
+  m_remoteSensorInvalid.SetUpdateFrequency(20_Hz);
   m_azimuth.OptimizeBusUtilization();
 }
 
@@ -153,6 +175,48 @@ void Turret::PublishTelemetry() {
   frc::SmartDashboard::PutNumber("Torreta/AnguloGrados", GetAngle().value());
   frc::SmartDashboard::PutNumber("Torreta/LanzadorRPM",
                                  GetShooterSpeed().value());
+
+  m_shooterCurrent.Refresh();
+  frc::SmartDashboard::PutNumber("Torreta/LanzadorAmps",
+                                 m_shooterCurrent.GetValue().value());
+
+  // Paso 1 de docs/06-torreta.md: con offsets::kTurret en 0_tr, este es el
+  // número crudo que se anota con la torreta en su centro mecánico. El offset
+  // que va en Constants.h es su negativo.
+  frc::SmartDashboard::PutNumber("Calibracion/TorretaRotaciones",
+                                 GetRawCancoderPosition().value());
+
+  // Paso 4: estos prenden cuando el TalonFX está frenando salida en esa
+  // dirección — o sea con el robot habilitado y empujando contra el límite, no
+  // con la torreta movida a mano y el robot apagado. Empujando con voltaje bajo
+  // hacia +110° debe prender el de adelante. Si prende el de atrás, o si la
+  // torreta pasa de largo sin que prenda ninguno, la inversión del motor no
+  // concuerda con la del CANcoder — ver docs/06-torreta.md.
+  frc::SmartDashboard::PutBoolean("Torreta/LimiteAdelante",
+                                  IsForwardSoftLimitTripped());
+  frc::SmartDashboard::PutBoolean("Torreta/LimiteAtras",
+                                  IsReverseSoftLimitTripped());
+  frc::SmartDashboard::PutBoolean("Torreta/EncoderOK", IsAzimuthSensorHealthy());
+}
+
+units::turn_t Turret::GetRawCancoderPosition() {
+  m_cancoderAbsolute.Refresh();
+  return m_cancoderAbsolute.GetValue();
+}
+
+bool Turret::IsForwardSoftLimitTripped() {
+  m_forwardSoftLimit.Refresh();
+  return m_forwardSoftLimit.GetValue();
+}
+
+bool Turret::IsReverseSoftLimitTripped() {
+  m_reverseSoftLimit.Refresh();
+  return m_reverseSoftLimit.GetValue();
+}
+
+bool Turret::IsAzimuthSensorHealthy() {
+  m_remoteSensorInvalid.Refresh();
+  return !m_remoteSensorInvalid.GetValue();
 }
 
 bool Turret::IsWithinRange(units::degree_t angle) const {
@@ -161,10 +225,8 @@ bool Turret::IsWithinRange(units::degree_t angle) const {
 }
 
 void Turret::SetAngle(units::degree_t angle) {
-  const units::degree_t clamped =
-      std::clamp(angle, constants::turret::kMinAngle,
-                 constants::turret::kMaxAngle);
-  m_azimuth.SetControl(m_azimuthRequest.WithPosition(ToTurns(clamped)));
+  m_azimuth.SetControl(
+      m_azimuthRequest.WithPosition(ClampToCommandRange(angle)));
 }
 
 void Turret::SetShooterSpeed(units::revolutions_per_minute_t speed) {
@@ -186,8 +248,11 @@ units::revolutions_per_minute_t Turret::GetShooterSpeed() {
   return TurnsPerSecondToRpm(m_shooterVelocity.GetValue());
 }
 
+// Contra el ángulo recortado, no contra el pedido: si alguien pide 130°, la
+// torreta llega a 107° y ahí ya terminó. Comparando contra los 130° originales,
+// GoToAngle nunca acabaría.
 bool Turret::IsAtAngle(units::degree_t target) {
-  return units::math::abs(GetAngle() - target) <
+  return units::math::abs(GetAngle() - ClampToCommandRange(target)) <
          constants::turret::kAngleTolerance;
 }
 

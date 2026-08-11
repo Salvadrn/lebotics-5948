@@ -57,6 +57,7 @@ class Drivetrain : public frc2::SubsystemBase {
   wpi::array<frc::SwerveModulePosition, 4> GetModulePositions();
   void UpdateVoltageGuard();
   void PublishTelemetry();
+  void PublishCalibrationTelemetry();
 
   SwerveModule m_frontLeft;
   SwerveModule m_frontRight;
@@ -73,4 +74,5 @@ class Drivetrain : public frc2::SubsystemBase {
   frc::SlewRateLimiter<units::radians_per_second> m_rotateLimiter;
 
   double m_voltageScale = 1.0;
+  int m_calibrationDivider = 0;
 };

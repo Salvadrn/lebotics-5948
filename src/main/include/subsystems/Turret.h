@@ -32,6 +32,23 @@ class Turret : public frc2::SubsystemBase {
   bool IsShooterReady(units::revolutions_per_minute_t target);
   bool IsWithinRange(units::degree_t angle) const;
 
+  // Verificación de los soft limits y calibración del offset.
+  // Ver docs/06-torreta.md.
+
+  // Lectura cruda del CANcoder, en rotaciones. Con offsets::kTurret en 0_tr,
+  // este es el número que hay que anotar con la torreta en su centro.
+  units::turn_t GetRawCancoderPosition();
+
+  // Cuál de los dos soft limits está frenando al motor ahora mismo. Sirven para
+  // confirmar a mano que el límite de cada lado es el que le toca: empujar la
+  // torreta hacia +110° debe prender el de adelante, no el de atrás.
+  bool IsForwardSoftLimitTripped();
+  bool IsReverseSoftLimitTripped();
+
+  // False si el TalonFX perdió al CANcoder. Cuando pasa, la posición contra la
+  // que se evalúan los soft limits deja de ser real y no protegen nada.
+  bool IsAzimuthSensorHealthy();
+
   frc2::CommandPtr GoToAngle(units::degree_t angle);
   frc2::CommandPtr TrackAngle(std::function<units::degree_t()> angleSupplier);
   frc2::CommandPtr SpinUp(units::revolutions_per_minute_t speed);
@@ -51,6 +68,10 @@ class Turret : public frc2::SubsystemBase {
   ctre::phoenix6::StatusSignal<units::turn_t> m_azimuthPosition;
   ctre::phoenix6::StatusSignal<units::turns_per_second_t> m_shooterVelocity;
   ctre::phoenix6::StatusSignal<units::ampere_t> m_shooterCurrent;
+  ctre::phoenix6::StatusSignal<units::turn_t> m_cancoderAbsolute;
+  ctre::phoenix6::StatusSignal<bool> m_forwardSoftLimit;
+  ctre::phoenix6::StatusSignal<bool> m_reverseSoftLimit;
+  ctre::phoenix6::StatusSignal<bool> m_remoteSensorInvalid;
 
   ctre::phoenix6::controls::MotionMagicVoltage m_azimuthRequest{0_tr};
   ctre::phoenix6::controls::VelocityVoltage m_shooterRequest{0_tps};

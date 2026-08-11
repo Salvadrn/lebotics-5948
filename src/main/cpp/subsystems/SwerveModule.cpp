@@ -14,11 +14,23 @@ constexpr double kTwoPi = 2.0 * std::numbers::pi;
 constexpr double kSteerPositionFactor = kTwoPi;
 constexpr double kSteerVelocityFactor = kTwoPi / 60.0;
 constexpr int kConfigAttempts = 5;
+
+// Cuanto se tiene que mover el encoder para darlo por vivo. Suficientemente
+// grande para no dispararse con ruido, suficientemente chico para que basta
+// con girar la rueda a mano un poco.
+constexpr units::turn_t kEncoderAliveThreshold = 0.01_tr;
+
+// Normaliza rotaciones a [0, 1).
+double Wrap01(double turns) {
+  const double wrapped = std::fmod(turns, 1.0);
+  return wrapped < 0.0 ? wrapped + 1.0 : wrapped;
+}
 }  // namespace
 
 SwerveModule::SwerveModule(int driveCanId, int steerCanId,
                            units::turn_t absoluteOffset, std::string_view name)
     : m_name{name},
+      m_absoluteOffset{absoluteOffset},
       m_drive{driveCanId, ctre::phoenix6::CANBus{constants::can::kBus}},
       m_steer{steerCanId, rev::spark::SparkFlex::MotorType::kBrushless},
       m_steerEncoder{m_steer.GetAbsoluteEncoder()},
@@ -109,6 +121,53 @@ void SwerveModule::ConfigureSteer(units::turn_t absoluteOffset) {
 
 units::radian_t SwerveModule::GetSteerAngle() {
   return units::radian_t{m_steerEncoder.GetPosition()};
+}
+
+// Rotaciones crudas del encoder, o sea lo que leeria con offset 0 y sin
+// factor de conversion. Es exactamente el numero que va en el offset cuando la
+// rueda apunta al frente, y sirve aunque ya haya un offset aplicado.
+//
+// REVLib define ZeroOffset como "la posicion reportada por el encoder en la
+// posicion cero deseada, como si el offset fuera 0, el factor de conversion 1
+// e inverted false". Invirtiendo esa relacion:
+//   sin invertir: reportado = wrap01(crudo - offset)  ->  crudo = wrap01(reportado + offset)
+//   invertido:    reportado = wrap01(offset - crudo)  ->  crudo = wrap01(offset - reportado)
+units::turn_t SwerveModule::GetRawAbsolutePosition() {
+  const double reported = GetSteerAngle().value() / kSteerPositionFactor;
+  const double offset = m_absoluteOffset.value();
+
+  const double raw = constants::mk4n::kSteerEncoderInverted
+                         ? Wrap01(offset - reported)
+                         : Wrap01(reported + offset);
+
+  const units::turn_t rawTurns{raw};
+
+  if (m_firstSteerReading.value() < 0.0) {
+    m_firstSteerReading = rawTurns;
+  } else if (!m_steerEncoderMoved) {
+    // Distancia angular corta, para que cruzar el 0/1 no cuente como salto.
+    double delta = std::abs(raw - m_firstSteerReading.value());
+    if (delta > 0.5) {
+      delta = 1.0 - delta;
+    }
+    m_steerEncoderMoved = units::turn_t{delta} > kEncoderAliveThreshold;
+  }
+
+  return rawTurns;
+}
+
+// Que tan lejos del frente esta la rueda ahora mismo, en (-0.5, 0.5]
+// rotaciones. Con el offset bien calibrado y la rueda al frente, esto es ~0.
+units::turn_t SwerveModule::GetAlignmentError() {
+  double error = Wrap01(GetSteerAngle().value() / kSteerPositionFactor);
+  if (error > 0.5) {
+    error -= 1.0;
+  }
+  return units::turn_t{error};
+}
+
+bool SwerveModule::IsSteerEncoderFaulted() {
+  return m_steer.GetFaults().sensor;
 }
 
 frc::SwerveModuleState SwerveModule::GetState() {

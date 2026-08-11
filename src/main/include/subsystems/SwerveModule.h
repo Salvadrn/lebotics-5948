@@ -42,6 +42,12 @@ class SwerveModule {
   units::celsius_t GetDriveTemperature();
   bool IsHealthy();
 
+  // Calibracion. Ver docs/04-calibracion.md.
+  units::turn_t GetRawAbsolutePosition();
+  units::turn_t GetAlignmentError();
+  bool IsSteerEncoderFaulted();
+  bool HasSteerEncoderMoved() const { return m_steerEncoderMoved; }
+
   std::string_view GetName() const { return m_name; }
 
  private:
@@ -50,6 +56,15 @@ class SwerveModule {
 
   std::string m_name;
   double m_outputScale = 1.0;
+
+  // Guardado para poder reconstruir la lectura cruda del encoder aunque el
+  // offset ya este aplicado: asi se recalibra sin volver a poner ceros.
+  units::turn_t m_absoluteOffset;
+
+  // Deteccion de encoder muerto: si el cable plano del data port no hace
+  // contacto, la lectura se queda pegada y esto nunca se pone en true.
+  bool m_steerEncoderMoved = false;
+  units::turn_t m_firstSteerReading{-1.0};
 
   ctre::phoenix6::hardware::TalonFX m_drive;
   rev::spark::SparkFlex m_steer;

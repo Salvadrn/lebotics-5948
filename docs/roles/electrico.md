@@ -8,7 +8,7 @@ que el robot no se apague.
 | Archivo | Es tuyo |
 |---|---|
 | `docs/cableado.html` · `docs/02-cableado.md` | Sí |
-| `docs/05-corriente-y-brownout.md` | Sí |
+| `docs/05-corriente-y-brownout.md` · `docs/06-baterias.md` | Sí |
 | `Constants.h` → namespace `power` (todos los límites de corriente) | Sí, con aviso |
 | `Constants.h` → namespace `can` (los IDs) | Sí — pero avisa a todos al cambiarlos |
 | Cualquier subsistema | **No** — propones límites, no reescribes lógica |
@@ -43,7 +43,8 @@ no resuelve nada — es el error conceptual más común aquí.
 
 1. **Probar las baterías con un probador de carga**, no con multímetro. Una batería vieja
    marca 12.6 V en reposo y se desploma bajo carga. Es la causa número uno de brownout y
-   ningún cambio de software la arregla.
+   ningún cambio de software la arregla. Procedimiento, criterios de retiro (0.020 Ω) y
+   bitácora: [`../06-baterias.md`](../06-baterias.md).
 2. **Revisar cada conector**, en especial el SB50 y las terminales del breaker principal.
    Un conector flojo es resistencia extra en el peor lugar posible.
 3. **Verificar los calibres** contra la tabla de `docs/02-cableado.md`: 6 AWG de batería,

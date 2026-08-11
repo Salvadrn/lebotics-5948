@@ -148,6 +148,7 @@ El procedimiento está en [`docs/04-calibracion.md`](docs/04-calibracion.md).
 | [`docs/02-cableado.md`](docs/02-cableado.md) | Cableado pin por pin, breakers, calibres, verificación |
 | [`docs/04-calibracion.md`](docs/04-calibracion.md) | **Obligatorio antes de manejar**: offsets de los encoders |
 | [`docs/05-corriente-y-brownout.md`](docs/05-corriente-y-brownout.md) | Por qué se apaga el robot y cómo lo evitamos |
+| [`docs/06-baterias.md`](docs/06-baterias.md) | Probar baterías con probador de carga y cuáles retirar |
 | [`docs/roles/`](docs/roles/) | Cómo se reparte el trabajo entre el equipo de software |
 
 ## Cómo trabajamos

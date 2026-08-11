@@ -242,8 +242,11 @@ tramo delgado o largo de más es resistencia interna extra.
 serie con todo el robot. Se detecta porque **se calienta**: tócalos después de una
 práctica dura. Uno tibio está costando voltaje.
 
-**Batería sana y cargada.** Una batería vieja tiene más resistencia interna. Mídela en
-reposo: menos de 12.4 V antes de un partido significa que no vas a terminarlo.
+**Batería sana y cargada.** Una batería vieja tiene más resistencia interna. Menos de
+12.4 V en reposo antes de un partido significa que no vas a terminarlo — **pero el reposo
+solo detecta la que está descargada, no la que está gastada.** Una batería para tirar marca
+12.6 V igual que una nueva; solo se delata bajo carga. El procedimiento con probador de
+carga y el criterio de retiro (0.020 Ω) están en [`06-baterias.md`](06-baterias.md).
 
 Las cuatro defensas del software —límites de corriente, rampas, limitador de aceleración
 y guardia de voltaje— ya están en el repo y explicadas en el otro documento. **Pero

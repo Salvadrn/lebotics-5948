@@ -120,13 +120,23 @@ un robot en brownout no.
 El roboRIO 1 hace brownout alrededor de **6.8 V** (el roboRIO 2 aguanta hasta ~6.3 V). El
 piso de 7.5 V deja margen antes de llegar ahí.
 
+**El techo de 9.5 V es más alto de lo que parece.** Con la tracción en su límite —4 × 40 A
+= 160 A— y una batería sana de 0.018 Ω, el bus se queda en 9.72 V: arriba del techo. Para
+bajar a 9.5 V con esos 160 A hace falta una resistencia interna de 0.019 Ω o más.
+
+O sea que **manejando fuerte, sin lanzador, la guardia no debería activarse nunca**. Si se
+activa, no es que la guardia esté haciendo su trabajo: es que la batería o un conector
+están mal. Por eso `Bateria/EscalaGuardia` sirve como diagnóstico y no solo como
+protección — está explicado en [`06-baterias.md`](06-baterias.md) §5.
+
 ## Si aún así se apaga
 
 En orden, de lo más probable a lo menos:
 
 1. **La batería está mala.** Es la causa número uno. Una batería vieja tiene resistencia
    interna alta y cae de voltaje aunque marque 12.6 V en reposo. Pruébenla con un
-   probador de carga, no con un multímetro.
+   probador de carga, no con un multímetro: el procedimiento completo, con los criterios
+   de aceptación y la bitácora, está en [`06-baterias.md`](06-baterias.md).
 2. **Los conectores están flojos u oxidados.** Especialmente el conector SB50 de la
    batería y las terminales del breaker principal. Un conector malo es resistencia extra.
 3. **Bajen `kDriveSupplyLimit`** a 35 A y `kDriveSupplyLowerLimit` a 30 A.

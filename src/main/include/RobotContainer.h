@@ -6,6 +6,7 @@
 #include <frc2/command/button/CommandXboxController.h>
 
 #include "Constants.h"
+#include "Dashboard.h"
 #include "subsystems/Drivetrain.h"
 #include "subsystems/Turret.h"
 #include "subsystems/Vision.h"
