@@ -1,0 +1,578 @@
+<style>
+  .hoja {
+    --text-primary: #1a1a1a;
+    --text-secondary: #5b5b5b;
+    --surface-1: #ffffff;
+    --border: #e2e2e4;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-weight: 400;
+    line-height: 1.55;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 8px 20px 56px;
+    font-size: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    .hoja {
+      --text-primary: #e8e8ea;
+      --text-secondary: #a1a1a8;
+      --surface-1: #1c1c1e;
+      --border: #38383c;
+    }
+  }
+  :root[data-theme="dark"] .hoja {
+    --text-primary: #e8e8ea; --text-secondary: #a1a1a8;
+    --surface-1: #1c1c1e; --border: #38383c;
+  }
+  :root[data-theme="light"] .hoja {
+    --text-primary: #1a1a1a; --text-secondary: #5b5b5b;
+    --surface-1: #ffffff; --border: #e2e2e4;
+  }
+  .hoja h1 { font-size: 22px; font-weight: 500; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .hoja .bajada { color: var(--text-secondary); font-size: 14px; margin: 0 0 4px; }
+  .hoja h2 {
+    font-size: 12px; font-weight: 500; letter-spacing: 0.09em; text-transform: uppercase;
+    color: var(--text-secondary); margin: 40px 0 14px;
+    padding-bottom: 7px; border-bottom: 1px solid var(--border);
+  }
+  .hoja h3 { font-size: 16px; font-weight: 500; margin: 26px 0 10px; }
+  .hoja p { margin: 0 0 12px; }
+  .hoja .sub { color: var(--text-secondary); font-size: 13px; }
+  .hoja hr { border: 0; border-top: 1px solid var(--border); margin: 26px 0; }
+  .caja { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; }
+  .scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 900px) { .cols { grid-template-columns: 1fr; } }
+  .hoja table { border-collapse: collapse; width: 100%; font-size: 13px; min-width: 540px; }
+  .hoja th {
+    text-align: left; font-weight: 500; font-size: 11px; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--text-secondary);
+    padding: 8px 12px; border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  .hoja td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .hoja tr:last-child td { border-bottom: 0; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+  .callout { border-radius: 9px; padding: 17px 19px; border: 2px solid; }
+  .callout .q { font-weight: 500; margin-bottom: 9px; font-size: 14px; }
+  .callout .a { font-size: 13.5px; line-height: 1.6; }
+  .c-verde  { border-color: #1e7d32; background: color-mix(in srgb, #1e7d32 8%, transparent); }
+  .c-verde .q { color: #2f9d45; }
+  .c-azul   { border-color: #1f5e8b; background: color-mix(in srgb, #1f5e8b 8%, transparent); }
+  .c-azul .q { color: #3d8dc4; }
+  .c-rojo   { border-color: #b3261e; background: color-mix(in srgb, #b3261e 8%, transparent); }
+  .c-rojo .q { color: #e05c54; }
+  .c-morado { border-color: #6b3fa0; background: color-mix(in srgb, #6b3fa0 8%, transparent); }
+  .c-morado .q { color: #9b72d0; }
+  .destino { display: grid; grid-template-columns: 24px 84px 1fr; gap: 11px; align-items: start; padding: 7px 0; border-bottom: 1px solid var(--border); }
+  .destino:last-child { border-bottom: 0; }
+  .swatch { width: 21px; height: 21px; border-radius: 4px; margin-top: 1px; }
+  .destino .pin { font-weight: 500; font-size: 13px; padding-top: 1px; }
+  .destino .d1 { font-weight: 500; font-size: 13.5px; }
+  .destino .d2 { font-size: 12.5px; color: var(--text-secondary); margin-top: 1px; }
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 20px; font-size: 11.5px; font-weight: 500; border: 1px solid; }
+  .check { display: grid; grid-template-columns: 20px 1fr; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+  .check:last-child { border-bottom: 0; }
+  .box { width: 14px; height: 14px; border: 1.5px solid var(--text-secondary); border-radius: 3px; margin-top: 3px; }
+</style>
+
+<div class="hoja">
+
+<h1>¿Cómo se cablea el robot de Lebotics 5948?</h1>
+<p class="bajada">Swerve MK4n (4 Kraken + 4 Vortex), torreta con lanzador, navX2 y Limelight sobre roboRIO 1.<br>
+Resuelve: por qué el CAN va en cadena y no en estrella · qué es el cable plano del SPARK Flex · qué calibre va en cada tramo · por qué se apaga el robot en las subidas.</p>
+
+<h2>El tablero completo</h2>
+
+<p>Así se ve el sistema entero. Cada color es un tipo de cable distinto; la leyenda de abajo trae el calibre de cada uno.</p>
+
+<div class="scroll">
+<svg viewBox="0 0 1400 980" style="width:100%; min-width:1100px; height:auto; margin:6px 0;" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
+  <rect x="4" y="4" width="1392" height="972" rx="8" fill="none" stroke="#808080" stroke-width="1.5" opacity="0.5"/>
+
+  <text x="26" y="34" font-size="15" font-weight="500" fill="#3d8dc4">LEBOTICS 5948 — SISTEMA DE CONTROL</text>
+  <text x="26" y="52" font-size="11" fill="#8a8a8a">Swerve MK4n · torreta · roboRIO 1 · REV PDH</text>
+
+  <rect x="24" y="70" width="250" height="96" rx="6" fill="none" stroke="#8a8a8a" stroke-width="1.2"/>
+  <text x="34" y="88" font-size="10" fill="#8a8a8a">COMUNICACIÓN INALÁMBRICA</text>
+  <rect x="36" y="96" width="104" height="58" rx="4" fill="none" stroke="#3d8dc4" stroke-width="1.6"/>
+  <text x="88" y="120" font-size="11" fill="#3d8dc4" text-anchor="middle">Radio FRC</text>
+  <text x="88" y="136" font-size="9" fill="#8a8a8a" text-anchor="middle">~40 s en arrancar</text>
+  <rect x="152" y="96" width="110" height="58" rx="4" fill="none" stroke="#c96a6a" stroke-width="1.6"/>
+  <text x="207" y="116" font-size="10" fill="#c96a6a" text-anchor="middle">Radio Power</text>
+  <text x="207" y="130" font-size="10" fill="#c96a6a" text-anchor="middle">Module</text>
+  <text x="207" y="146" font-size="9" fill="#8a8a8a" text-anchor="middle">12 V regulado</text>
+
+  <rect x="300" y="70" width="150" height="96" rx="6" fill="none" stroke="#2f9d45" stroke-width="1.6"/>
+  <text x="375" y="92" font-size="11" fill="#2f9d45" text-anchor="middle" font-weight="500">Limelight</text>
+  <text x="375" y="110" font-size="9" fill="#8a8a8a" text-anchor="middle">AprilTags</text>
+  <text x="375" y="128" font-size="9" fill="#8a8a8a" text-anchor="middle">Ethernet + 12 V</text>
+  <text x="375" y="148" font-size="9" fill="#c9a227" text-anchor="middle">NO por USB del rio</text>
+
+  <rect x="24" y="200" width="300" height="230" rx="6" fill="none" stroke="#8a8a8a" stroke-width="1.5"/>
+  <rect x="36" y="212" width="276" height="206" rx="4" fill="#6a6a6e" stroke="#5a5a5e" stroke-width="1"/>
+  <text x="174" y="238" font-size="13" fill="currentColor" text-anchor="middle" font-weight="500">roboRIO 1</text>
+
+  <rect x="60" y="252" width="228" height="52" rx="3" fill="none" stroke="#9b72d0" stroke-width="1.6"/>
+  <text x="174" y="272" font-size="10" fill="#9b72d0" text-anchor="middle">navX2-MXP</text>
+  <text x="174" y="288" font-size="9" fill="#b9a0e0" text-anchor="middle">montado en el puerto MXP</text>
+
+  <rect x="60" y="318" width="66" height="26" rx="3" fill="none" stroke="#3d8dc4" stroke-width="1.3"/>
+  <text x="93" y="335" font-size="9" fill="#3d8dc4" text-anchor="middle">ETHERNET</text>
+  <rect x="136" y="318" width="66" height="26" rx="3" fill="none" stroke="#9b72d0" stroke-width="1.3"/>
+  <text x="169" y="335" font-size="9" fill="#9b72d0" text-anchor="middle">CAN</text>
+  <rect x="212" y="318" width="76" height="26" rx="3" fill="none" stroke="#c96a6a" stroke-width="1.3"/>
+  <text x="250" y="335" font-size="9" fill="#c96a6a" text-anchor="middle">PWR IN</text>
+
+  <text x="174" y="370" font-size="9" fill="#2f9d45" text-anchor="middle">terminación CAN 120 Ω integrada</text>
+  <text x="174" y="392" font-size="9" fill="#8a8a8a" text-anchor="middle">brownout ≈ 6.8 V</text>
+
+  <rect x="500" y="70" width="230" height="500" rx="6" fill="none" stroke="#c96a6a" stroke-width="1.8"/>
+  <text x="615" y="92" font-size="13" fill="#c96a6a" text-anchor="middle" font-weight="500">REV PDH</text>
+  <text x="615" y="108" font-size="9" fill="#8a8a8a" text-anchor="middle">20 canales de 40 A · 3 de 15 A</text>
+
+  <g stroke="#d98a3a" stroke-width="1.2" fill="none">
+    <rect x="520" y="124" width="86" height="20" rx="2"/><rect x="624" y="124" width="86" height="20" rx="2"/>
+    <rect x="520" y="152" width="86" height="20" rx="2"/><rect x="624" y="152" width="86" height="20" rx="2"/>
+    <rect x="520" y="180" width="86" height="20" rx="2"/><rect x="624" y="180" width="86" height="20" rx="2"/>
+    <rect x="520" y="208" width="86" height="20" rx="2"/><rect x="624" y="208" width="86" height="20" rx="2"/>
+    <rect x="520" y="236" width="86" height="20" rx="2"/><rect x="624" y="236" width="86" height="20" rx="2"/>
+    <rect x="520" y="264" width="86" height="20" rx="2"/><rect x="624" y="264" width="86" height="20" rx="2"/>
+  </g>
+  <text x="563" y="138" font-size="8.5" fill="#d98a3a" text-anchor="middle">40A · Kraken 1</text>
+  <text x="667" y="138" font-size="8.5" fill="#d98a3a" text-anchor="middle">40A · Flex 2</text>
+  <text x="563" y="166" font-size="8.5" fill="#d98a3a" text-anchor="middle">40A · Kraken 3</text>
+  <text x="667" y="166" font-size="8.5" fill="#d98a3a" text-anchor="middle">40A · Flex 4</text>
+  <text x="563" y="194" font-size="8.5" fill="#d98a3a" text-anchor="middle">40A · Kraken 5</text>
+  <text x="667" y="194" font-size="8.5" fill="#d98a3a" text-anchor="middle">40A · Flex 6</text>
+  <text x="563" y="222" font-size="8.5" fill="#d98a3a" text-anchor="middle">40A · Kraken 7</text>
+  <text x="667" y="222" font-size="8.5" fill="#d98a3a" text-anchor="middle">40A · Flex 8</text>
+  <text x="563" y="250" font-size="8.5" fill="#d98a3a" text-anchor="middle">30A · Torreta 9</text>
+  <text x="667" y="250" font-size="8.5" fill="#d98a3a" text-anchor="middle">40A · Lanz. 11</text>
+  <text x="563" y="278" font-size="8.5" fill="#8a8a8a" text-anchor="middle">libre</text>
+  <text x="667" y="278" font-size="8.5" fill="#8a8a8a" text-anchor="middle">libre</text>
+
+  <line x1="520" y1="300" x2="710" y2="300" stroke="#8a8a8a" stroke-width="1" opacity="0.5"/>
+  <text x="615" y="318" font-size="9" fill="#8a8a8a" text-anchor="middle">CANALES DE BAJA CORRIENTE</text>
+  <g stroke="#c9a227" stroke-width="1.2" fill="none">
+    <rect x="520" y="328" width="86" height="20" rx="2"/><rect x="624" y="328" width="86" height="20" rx="2"/>
+  </g>
+  <text x="563" y="342" font-size="8.5" fill="#c9a227" text-anchor="middle">10A · Radio</text>
+  <text x="667" y="342" font-size="8.5" fill="#c9a227" text-anchor="middle">10A · Limelight</text>
+
+  <rect x="520" y="368" width="190" height="30" rx="3" fill="none" stroke="#2f9d45" stroke-width="1.5"/>
+  <text x="615" y="387" font-size="9.5" fill="#2f9d45" text-anchor="middle">salida dedicada roboRIO</text>
+
+  <rect x="520" y="414" width="190" height="34" rx="3" fill="none" stroke="#9b72d0" stroke-width="1.5"/>
+  <text x="615" y="428" font-size="9.5" fill="#9b72d0" text-anchor="middle">CAN — fin de la cadena</text>
+  <text x="615" y="442" font-size="8.5" fill="#b9a0e0" text-anchor="middle">jumper 120 Ω en ON</text>
+
+  <rect x="520" y="466" width="190" height="34" rx="3" fill="none" stroke="#c96a6a" stroke-width="2"/>
+  <text x="615" y="488" font-size="10" fill="#c96a6a" text-anchor="middle">ENTRADA 12 V — 6 AWG</text>
+
+  <text x="615" y="524" font-size="9" fill="#8a8a8a" text-anchor="middle">pantalla de voltaje: vigílala</text>
+  <text x="615" y="542" font-size="9" fill="#8a8a8a" text-anchor="middle">en las subidas</text>
+
+  <g>
+    <rect x="880" y="70" width="230" height="112" rx="6" fill="none" stroke="#8a8a8a" stroke-width="1.3"/>
+    <text x="995" y="90" font-size="11" fill="currentColor" text-anchor="middle" font-weight="500">MÓDULO DELANTERO IZQ.</text>
+    <rect x="894" y="100" width="94" height="30" rx="3" fill="none" stroke="#c96a6a" stroke-width="1.4"/>
+    <text x="941" y="119" font-size="9.5" fill="#c96a6a" text-anchor="middle">Kraken · CAN 1</text>
+    <rect x="1002" y="100" width="94" height="30" rx="3" fill="none" stroke="#c96a6a" stroke-width="1.4"/>
+    <text x="1049" y="119" font-size="9.5" fill="#c96a6a" text-anchor="middle">Flex · CAN 2</text>
+    <rect x="1002" y="140" width="94" height="28" rx="3" fill="none" stroke="#c9a227" stroke-width="1.3"/>
+    <text x="1049" y="158" font-size="9" fill="#c9a227" text-anchor="middle">Through Bore</text>
+    <line x1="1049" y1="130" x2="1049" y2="140" stroke="#c9a227" stroke-width="1.5"/>
+    <text x="941" y="160" font-size="8.5" fill="#8a8a8a" text-anchor="middle">tracción</text>
+  </g>
+
+  <g>
+    <rect x="880" y="196" width="230" height="112" rx="6" fill="none" stroke="#8a8a8a" stroke-width="1.3"/>
+    <text x="995" y="216" font-size="11" fill="currentColor" text-anchor="middle" font-weight="500">MÓDULO DELANTERO DER.</text>
+    <rect x="894" y="226" width="94" height="30" rx="3" fill="none" stroke="#c96a6a" stroke-width="1.4"/>
+    <text x="941" y="245" font-size="9.5" fill="#c96a6a" text-anchor="middle">Kraken · CAN 3</text>
+    <rect x="1002" y="226" width="94" height="30" rx="3" fill="none" stroke="#c96a6a" stroke-width="1.4"/>
+    <text x="1049" y="245" font-size="9.5" fill="#c96a6a" text-anchor="middle">Flex · CAN 4</text>
+    <rect x="1002" y="266" width="94" height="28" rx="3" fill="none" stroke="#c9a227" stroke-width="1.3"/>
+    <text x="1049" y="284" font-size="9" fill="#c9a227" text-anchor="middle">Through Bore</text>
+    <line x1="1049" y1="256" x2="1049" y2="266" stroke="#c9a227" stroke-width="1.5"/>
+  </g>
+
+  <g>
+    <rect x="880" y="322" width="230" height="112" rx="6" fill="none" stroke="#8a8a8a" stroke-width="1.3"/>
+    <text x="995" y="342" font-size="11" fill="currentColor" text-anchor="middle" font-weight="500">MÓDULO TRASERO IZQ.</text>
+    <rect x="894" y="352" width="94" height="30" rx="3" fill="none" stroke="#c96a6a" stroke-width="1.4"/>
+    <text x="941" y="371" font-size="9.5" fill="#c96a6a" text-anchor="middle">Kraken · CAN 5</text>
+    <rect x="1002" y="352" width="94" height="30" rx="3" fill="none" stroke="#c96a6a" stroke-width="1.4"/>
+    <text x="1049" y="371" font-size="9.5" fill="#c96a6a" text-anchor="middle">Flex · CAN 6</text>
+    <rect x="1002" y="392" width="94" height="28" rx="3" fill="none" stroke="#c9a227" stroke-width="1.3"/>
+    <text x="1049" y="410" font-size="9" fill="#c9a227" text-anchor="middle">Through Bore</text>
+    <line x1="1049" y1="382" x2="1049" y2="392" stroke="#c9a227" stroke-width="1.5"/>
+  </g>
+
+  <g>
+    <rect x="880" y="448" width="230" height="112" rx="6" fill="none" stroke="#8a8a8a" stroke-width="1.3"/>
+    <text x="995" y="468" font-size="11" fill="currentColor" text-anchor="middle" font-weight="500">MÓDULO TRASERO DER.</text>
+    <rect x="894" y="478" width="94" height="30" rx="3" fill="none" stroke="#c96a6a" stroke-width="1.4"/>
+    <text x="941" y="497" font-size="9.5" fill="#c96a6a" text-anchor="middle">Kraken · CAN 7</text>
+    <rect x="1002" y="478" width="94" height="30" rx="3" fill="none" stroke="#c96a6a" stroke-width="1.4"/>
+    <text x="1049" y="497" font-size="9.5" fill="#c96a6a" text-anchor="middle">Flex · CAN 8</text>
+    <rect x="1002" y="518" width="94" height="28" rx="3" fill="none" stroke="#c9a227" stroke-width="1.3"/>
+    <text x="1049" y="536" font-size="9" fill="#c9a227" text-anchor="middle">Through Bore</text>
+    <line x1="1049" y1="508" x2="1049" y2="518" stroke="#c9a227" stroke-width="1.5"/>
+  </g>
+
+  <g>
+    <rect x="1146" y="70" width="222" height="150" rx="6" fill="none" stroke="#9b72d0" stroke-width="1.5"/>
+    <text x="1257" y="92" font-size="11" fill="#9b72d0" text-anchor="middle" font-weight="500">TORRETA</text>
+    <rect x="1160" y="104" width="194" height="30" rx="3" fill="none" stroke="#c96a6a" stroke-width="1.4"/>
+    <text x="1257" y="123" font-size="9.5" fill="#c96a6a" text-anchor="middle">Kraken azimuth · CAN 9</text>
+    <rect x="1160" y="142" width="194" height="30" rx="3" fill="none" stroke="#c9a227" stroke-width="1.4"/>
+    <text x="1257" y="161" font-size="9.5" fill="#c9a227" text-anchor="middle">CANcoder · CAN 10</text>
+    <rect x="1160" y="180" width="194" height="30" rx="3" fill="none" stroke="#c96a6a" stroke-width="1.4"/>
+    <text x="1257" y="199" font-size="9.5" fill="#c96a6a" text-anchor="middle">Kraken lanzador · CAN 11</text>
+  </g>
+
+  <rect x="1146" y="640" width="222" height="120" rx="6" fill="none" stroke="#c96a6a" stroke-width="2"/>
+  <text x="1257" y="672" font-size="14" fill="#c96a6a" text-anchor="middle" font-weight="500">BATERÍA 12 V</text>
+  <text x="1257" y="694" font-size="10" fill="#8a8a8a" text-anchor="middle">FRC · conector SB50</text>
+  <text x="1257" y="714" font-size="9.5" fill="#c9a227" text-anchor="middle">resistencia interna ~0.018 Ω</text>
+  <text x="1257" y="734" font-size="9.5" fill="#c9a227" text-anchor="middle">si está vieja: brownout</text>
+
+  <rect x="920" y="666" width="150" height="70" rx="6" fill="none" stroke="#e05c54" stroke-width="2"/>
+  <text x="995" y="694" font-size="11" fill="#e05c54" text-anchor="middle" font-weight="500">BREAKER</text>
+  <text x="995" y="712" font-size="11" fill="#e05c54" text-anchor="middle" font-weight="500">PRINCIPAL 120 A</text>
+
+  <path d="M1146 690 L1070 694" stroke="#e05c54" stroke-width="4" fill="none"/>
+  <path d="M1146 712 L1070 716" stroke="#8a8a8a" stroke-width="4" fill="none"/>
+  <path d="M920 694 L760 640 L760 490 L710 486" stroke="#e05c54" stroke-width="4" fill="none"/>
+  <path d="M920 716 L780 660 L780 500 L710 496" stroke="#8a8a8a" stroke-width="4" fill="none"/>
+
+  <path d="M500 384 L400 384 L400 350 L312 340" stroke="#2f9d45" stroke-width="2.5" fill="none"/>
+  <path d="M500 338 L470 338 L470 200 L274 140" stroke="#c9a227" stroke-width="2" fill="none"/>
+  <path d="M500 332 L456 332 L456 180 L450 120" stroke="#c9a227" stroke-width="2" fill="none"/>
+
+  <path d="M202 331 L360 331 L360 470 L500 431" stroke="#9b72d0" stroke-width="2.5" fill="none" stroke-dasharray="0"/>
+  <path d="M880 126 L840 126 L840 600 L800 620 L740 560 L710 500" stroke="#9b72d0" stroke-width="2.5" fill="none" opacity="0.85"/>
+  <path d="M1146 140 L1130 140 L1130 600 L860 620 L840 600" stroke="#9b72d0" stroke-width="2.5" fill="none" opacity="0.85"/>
+
+  <path d="M93 318 L93 180 L152 150" stroke="#3d8dc4" stroke-width="2.5" fill="none"/>
+  <path d="M140 120 L300 110" stroke="#3d8dc4" stroke-width="2.5" fill="none"/>
+
+  <g>
+    <rect x="24" y="810" width="1344" height="146" rx="6" fill="none" stroke="#8a8a8a" stroke-width="1.2"/>
+    <text x="42" y="834" font-size="12" font-weight="500" fill="currentColor">LEYENDA</text>
+
+    <text x="42" y="862" font-size="10" fill="#8a8a8a">POTENCIA</text>
+    <line x1="42" y1="876" x2="102" y2="876" stroke="#e05c54" stroke-width="4"/>
+    <text x="112" y="880" font-size="10" fill="currentColor">+12 V</text>
+    <line x1="42" y1="898" x2="102" y2="898" stroke="#8a8a8a" stroke-width="4"/>
+    <text x="112" y="902" font-size="10" fill="currentColor">tierra</text>
+    <text x="42" y="926" font-size="9" fill="#8a8a8a">6 AWG batería · 12 AWG motores</text>
+
+    <text x="330" y="862" font-size="10" fill="#8a8a8a">BUS CAN</text>
+    <line x1="330" y1="876" x2="390" y2="876" stroke="#9b72d0" stroke-width="3"/>
+    <text x="400" y="880" font-size="10" fill="currentColor">par trenzado amarillo / verde</text>
+    <text x="330" y="902" font-size="9" fill="#8a8a8a">22 AWG · en cadena, nunca en estrella</text>
+    <text x="330" y="922" font-size="9" fill="#8a8a8a">120 Ω en cada extremo (roboRIO y PDH)</text>
+
+    <text x="700" y="862" font-size="10" fill="#8a8a8a">ETHERNET</text>
+    <line x1="700" y1="876" x2="760" y2="876" stroke="#3d8dc4" stroke-width="3"/>
+    <text x="770" y="880" font-size="10" fill="currentColor">radio · roboRIO · Limelight</text>
+
+    <text x="700" y="906" font-size="10" fill="#8a8a8a">ENCODER</text>
+    <line x1="700" y1="920" x2="760" y2="920" stroke="#c9a227" stroke-width="3"/>
+    <text x="770" y="924" font-size="10" fill="currentColor">cable plano al data port</text>
+
+    <text x="1060" y="862" font-size="10" fill="#8a8a8a">ORDEN DE ENCENDIDO</text>
+    <text x="1060" y="880" font-size="9.5" fill="currentColor">1. batería → 2. breaker → 3. esperar radio</text>
+    <text x="1060" y="898" font-size="9.5" fill="currentColor">4. Driver Station → 5. verificar CAN IDs</text>
+    <text x="1060" y="920" font-size="9.5" fill="#e05c54">Ruedas en el aire la primera vez.</text>
+  </g>
+</svg>
+</div>
+
+<h2>Primero: los tres circuitos que conviven</h2>
+
+<p>Todo robot de FRC tiene tres redes distintas corriendo por el mismo chasis. Confundirlas es el origen de casi todos los problemas de cableado. Antes de conectar nada, ten claro cuál es cuál.</p>
+
+<div class="cols">
+  <div class="caja">
+    <span class="pill" style="border-color:#7a2f2f; color:#c96a6a;">POTENCIA</span>
+    <p style="margin-top:10px; margin-bottom:0;">Cables gruesos, rojo y negro. Llevan los amperes que mueven los motores. Van de la batería al breaker principal, al PDH, y de ahí a cada motor.</p>
+    <p class="sub" style="margin-bottom:0; margin-top:8px;">Si te equivocas aquí: humo.</p>
+  </div>
+  <div class="caja">
+    <span class="pill" style="border-color:#6b3fa0; color:#9b72d0;">DATOS — CAN</span>
+    <p style="margin-top:10px; margin-bottom:0;">Dos cables delgados trenzados, amarillo y verde. Llevan las órdenes del roboRIO a cada motor. <strong>Van en cadena, uno tras otro.</strong></p>
+    <p class="sub" style="margin-bottom:0; margin-top:8px;">Si te equivocas aquí: el robot no ve la mitad de sus motores.</p>
+  </div>
+</div>
+
+<div class="caja" style="margin-top:18px;">
+  <span class="pill" style="border-color:#1f5e8b; color:#3d8dc4;">RED — ETHERNET</span>
+  <p style="margin-top:10px; margin-bottom:0;">Cable de red normal. Conecta el roboRIO, el radio y el Limelight. Es cómo la laptop le habla al robot y cómo la cámara manda lo que ve.</p>
+</div>
+
+<h2>El bus CAN — el error que comete todo equipo nuevo</h2>
+
+<p>El CAN <strong>no es</strong> como enchufar lámparas a un multicontacto. No sale un cable del roboRIO a cada motor. Es una <strong>cadena</strong>: el cable entra a un dispositivo, sale del mismo dispositivo, y va al siguiente.</p>
+
+<div class="scroll">
+<svg viewBox="0 0 1000 300" style="width:100%; min-width:820px; height:auto; margin:8px 0 4px;" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="ar" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L6,3 z" fill="#6b3fa0"/>
+    </marker>
+  </defs>
+
+  <text x="14" y="20" font-size="12" font-weight="500" fill="#2f9d45" font-family="sans-serif">ASÍ SÍ — cadena (daisy chain)</text>
+
+  <rect x="14" y="34" width="104" height="46" rx="6" fill="none" stroke="#2f9d45" stroke-width="2"/>
+  <text x="66" y="54" font-size="12" fill="#2f9d45" text-anchor="middle" font-family="sans-serif" font-weight="500">roboRIO</text>
+  <text x="66" y="70" font-size="10" fill="#2f9d45" text-anchor="middle" font-family="sans-serif">120 Ω interna</text>
+
+  <line x1="118" y1="57" x2="168" y2="57" stroke="#6b3fa0" stroke-width="2.5" marker-end="url(#ar)"/>
+  <rect x="172" y="38" width="84" height="38" rx="5" fill="none" stroke="#6b3fa0" stroke-width="1.6"/>
+  <text x="214" y="54" font-size="11" fill="#9b72d0" text-anchor="middle" font-family="sans-serif">Kraken 1</text>
+  <text x="214" y="68" font-size="10" fill="#9b72d0" text-anchor="middle" font-family="sans-serif">in → out</text>
+
+  <line x1="256" y1="57" x2="300" y2="57" stroke="#6b3fa0" stroke-width="2.5" marker-end="url(#ar)"/>
+  <rect x="304" y="38" width="84" height="38" rx="5" fill="none" stroke="#6b3fa0" stroke-width="1.6"/>
+  <text x="346" y="54" font-size="11" fill="#9b72d0" text-anchor="middle" font-family="sans-serif">Flex 2</text>
+  <text x="346" y="68" font-size="10" fill="#9b72d0" text-anchor="middle" font-family="sans-serif">in → out</text>
+
+  <line x1="388" y1="57" x2="432" y2="57" stroke="#6b3fa0" stroke-width="2.5" marker-end="url(#ar)"/>
+  <text x="452" y="61" font-size="14" fill="#9b72d0" font-family="sans-serif">· · ·</text>
+  <line x1="478" y1="57" x2="522" y2="57" stroke="#6b3fa0" stroke-width="2.5" marker-end="url(#ar)"/>
+
+  <rect x="526" y="38" width="96" height="38" rx="5" fill="none" stroke="#6b3fa0" stroke-width="1.6"/>
+  <text x="574" y="54" font-size="11" fill="#9b72d0" text-anchor="middle" font-family="sans-serif">CANcoder 10</text>
+  <text x="574" y="68" font-size="10" fill="#9b72d0" text-anchor="middle" font-family="sans-serif">in → out</text>
+
+  <line x1="622" y1="57" x2="666" y2="57" stroke="#6b3fa0" stroke-width="2.5" marker-end="url(#ar)"/>
+  <rect x="670" y="34" width="104" height="46" rx="6" fill="none" stroke="#2f9d45" stroke-width="2"/>
+  <text x="722" y="54" font-size="12" fill="#2f9d45" text-anchor="middle" font-family="sans-serif" font-weight="500">PDH</text>
+  <text x="722" y="70" font-size="10" fill="#2f9d45" text-anchor="middle" font-family="sans-serif">jumper en ON</text>
+
+  <text x="790" y="52" font-size="11" fill="#2f9d45" font-family="sans-serif">Los dos extremos</text>
+  <text x="790" y="67" font-size="11" fill="#2f9d45" font-family="sans-serif">terminados</text>
+
+  <line x1="14" y1="112" x2="986" y2="112" stroke="#808080" stroke-width="1" opacity="0.3"/>
+
+  <text x="14" y="142" font-size="12" font-weight="500" fill="#e05c54" font-family="sans-serif">ASÍ NO — estrella (esto no funciona)</text>
+
+  <rect x="14" y="182" width="104" height="46" rx="6" fill="none" stroke="#e05c54" stroke-width="2"/>
+  <text x="66" y="209" font-size="12" fill="#e05c54" text-anchor="middle" font-family="sans-serif" font-weight="500">roboRIO</text>
+
+  <line x1="118" y1="196" x2="230" y2="164" stroke="#e05c54" stroke-width="2" stroke-dasharray="5,3"/>
+  <line x1="118" y1="205" x2="230" y2="205" stroke="#e05c54" stroke-width="2" stroke-dasharray="5,3"/>
+  <line x1="118" y1="214" x2="230" y2="246" stroke="#e05c54" stroke-width="2" stroke-dasharray="5,3"/>
+
+  <rect x="234" y="148" width="84" height="32" rx="5" fill="none" stroke="#e05c54" stroke-width="1.4"/>
+  <text x="276" y="168" font-size="11" fill="#e05c54" text-anchor="middle" font-family="sans-serif">Kraken 1</text>
+  <rect x="234" y="189" width="84" height="32" rx="5" fill="none" stroke="#e05c54" stroke-width="1.4"/>
+  <text x="276" y="209" font-size="11" fill="#e05c54" text-anchor="middle" font-family="sans-serif">Kraken 3</text>
+  <rect x="234" y="230" width="84" height="32" rx="5" fill="none" stroke="#e05c54" stroke-width="1.4"/>
+  <text x="276" y="250" font-size="11" fill="#e05c54" text-anchor="middle" font-family="sans-serif">Kraken 5</text>
+
+  <text x="346" y="196" font-size="12" fill="#e05c54" font-family="sans-serif">Cada ramal es un extremo sin terminar.</text>
+  <text x="346" y="214" font-size="12" fill="#e05c54" font-family="sans-serif">La señal rebota y el bus se corrompe: dispositivos</text>
+  <text x="346" y="232" font-size="12" fill="#e05c54" font-family="sans-serif">que aparecen y desaparecen, o no aparecen nunca.</text>
+</svg>
+</div>
+
+<div class="cols" style="margin-top:16px;">
+  <div class="callout c-morado">
+    <div class="q">«¿Por qué en cadena y no en estrella?»</div>
+    <div class="a">El CAN es una línea de transmisión, no una alimentación. La señal viaja como una onda por el par trenzado y necesita una resistencia de <strong>120 Ω en cada extremo</strong> que la absorba al llegar. Si llega a un punto sin terminación, <strong>rebota</strong>, y la onda reflejada choca con la que viene atrás. En estrella cada ramal es un extremo sin terminar: tienes tres o cuatro rebotes simultáneos y el bus deja de ser legible.</div>
+  </div>
+  <div class="callout c-verde">
+    <div class="q">«¿Dónde pongo las resistencias de 120 Ω?»</div>
+    <div class="a">En ningún lado: <strong>ya vienen adentro</strong>. El roboRIO trae una integrada y el PDH trae otra con un jumper que sale de fábrica en <strong>ON</strong>. Por eso la regla es: <strong>empieza en el roboRIO, termina en el PDH</strong>, y todo lo demás va en medio. Déjale el jumper en ON y no compres resistencias.</div>
+  </div>
+</div>
+
+<h3>El orden físico que te recomiendo</h3>
+
+<p>No importa el número de CAN ID, importa el orden en que están <em>físicamente</em> en el robot. Ve por el camino más corto:</p>
+
+<div class="caja mono" style="margin-bottom:14px; line-height:2;">
+roboRIO → Kraken 1 → Flex 2 &nbsp;<span class="sub">(módulo delantero izq.)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;→ Kraken 3 → Flex 4 &nbsp;<span class="sub">(delantero der.)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;→ Kraken 7 → Flex 8 &nbsp;<span class="sub">(trasero der.)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;→ Kraken 5 → Flex 6 &nbsp;<span class="sub">(trasero izq.)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;→ Kraken 9 → CANcoder 10 → Kraken 11 &nbsp;<span class="sub">(torreta y lanzador)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;→ <strong>PDH</strong> &nbsp;<span class="sub">(fin de la cadena, jumper ON)</span>
+</div>
+
+<p class="sub">Fíjate que va en <strong>U</strong> alrededor del chasis (izq → der → der → izq), no en zigzag. Eso minimiza el largo total del bus, que es lo que más importa para la integridad de la señal.</p>
+
+<h2>El cable plano del SPARK Flex — el que más confunde</h2>
+
+<p>Cada módulo MK4n lleva un <strong>REV Through Bore Encoder</strong> absoluto que le dice al robot hacia dónde apunta la rueda al encender. Ese encoder <strong>no va al CAN</strong>: va directo al <strong>data port</strong> del SPARK Flex de ese módulo, con un cable plano.</p>
+
+<p>Es el conector rectangular chico en la cara del SPARK Flex, junto a los terminales de motor. No lo confundas con el puerto CAN ni con el USB-C.</p>
+
+<h3>Data port del SPARK Flex — tira de 10 pines</h3>
+
+<div class="scroll">
+<div style="display:flex; gap:18px; padding:14px 4px 4px; min-width:560px;">
+  <div style="text-align:center"><div style="width:7px;height:30px;background:#e05c54;margin:0 auto;border-radius:2px"></div><div style="writing-mode:vertical-rl;font-size:12px;color:#e05c54;margin-top:6px">+5V</div></div>
+  <div style="text-align:center"><div style="width:7px;height:30px;background:#808080;margin:0 auto;border-radius:2px"></div><div style="writing-mode:vertical-rl;font-size:12px;color:var(--text-primary);margin-top:6px">GND</div></div>
+  <div style="text-align:center"><div style="width:7px;height:30px;background:#c9a227;margin:0 auto;border-radius:2px"></div><div style="writing-mode:vertical-rl;font-size:12px;color:#c9a227;margin-top:6px">ABS / PWM</div></div>
+  <div style="text-align:center"><div style="width:7px;height:30px;background:#9b72d0;margin:0 auto;border-radius:2px"></div><div style="writing-mode:vertical-rl;font-size:12px;color:#9b72d0;margin-top:6px">ENC A</div></div>
+  <div style="text-align:center"><div style="width:7px;height:30px;background:#9b72d0;margin:0 auto;border-radius:2px"></div><div style="writing-mode:vertical-rl;font-size:12px;color:#9b72d0;margin-top:6px">ENC B</div></div>
+  <div style="text-align:center"><div style="width:7px;height:30px;background:#9e9e9e;margin:0 auto;border-radius:2px"></div><div style="writing-mode:vertical-rl;font-size:12px;color:#9e9e9e;margin-top:6px">sin usar</div></div>
+  <div style="text-align:center"><div style="width:7px;height:30px;background:#9e9e9e;margin:0 auto;border-radius:2px"></div><div style="writing-mode:vertical-rl;font-size:12px;color:#9e9e9e;margin-top:6px">sin usar</div></div>
+  <div style="text-align:center"><div style="width:7px;height:30px;background:#9e9e9e;margin:0 auto;border-radius:2px"></div><div style="writing-mode:vertical-rl;font-size:12px;color:#9e9e9e;margin-top:6px">sin usar</div></div>
+  <div style="text-align:center"><div style="width:7px;height:30px;background:#9e9e9e;margin:0 auto;border-radius:2px"></div><div style="writing-mode:vertical-rl;font-size:12px;color:#9e9e9e;margin-top:6px">sin usar</div></div>
+  <div style="text-align:center"><div style="width:7px;height:30px;background:#9e9e9e;margin:0 auto;border-radius:2px"></div><div style="writing-mode:vertical-rl;font-size:12px;color:#9e9e9e;margin-top:6px">sin usar</div></div>
+  <div style="align-self:flex-start; padding-left:16px; max-width:230px;">
+    <div class="sub" style="font-size:12.5px; line-height:1.5;">Tu conector es esta tira de 10 posiciones en la cara del SPARK Flex. Los cinco grises quedan sin conectar y eso está bien.</div>
+  </div>
+</div>
+</div>
+
+<div class="caja" style="margin-top:16px;">
+  <div style="font-size:11px; letter-spacing:0.09em; text-transform:uppercase; color:var(--text-secondary); margin-bottom:8px;">A dónde va cada pin</div>
+  <div class="destino">
+    <div class="swatch" style="background:#e05c54"></div>
+    <div class="pin" style="color:#e05c54">+5V</div>
+    <div><div class="d1">→ alimenta el encoder Through Bore</div><div class="d2">El SPARK Flex lo genera solo. Nunca le metas 12 V aquí: el encoder vive a 5 V y se quema.</div></div>
+  </div>
+  <div class="destino">
+    <div class="swatch" style="background:#808080"></div>
+    <div class="pin">GND</div>
+    <div><div class="d1">→ tierra del encoder</div><div class="d2">Es la referencia contra la que se mide la señal. Sin este cable la lectura flota y el módulo apunta a cualquier lado.</div></div>
+  </div>
+  <div class="destino">
+    <div class="swatch" style="background:#c9a227"></div>
+    <div class="pin" style="color:#c9a227">ABS</div>
+    <div><div class="d1">→ señal absoluta del encoder <strong>(la importante)</strong></div><div class="d2">Es el pulso que dice el ángulo exacto de la rueda al encender. Es el único que el código lee para el offset.</div></div>
+  </div>
+  <div class="destino">
+    <div class="swatch" style="background:#9b72d0"></div>
+    <div class="pin" style="color:#9b72d0">A / B</div>
+    <div><div class="d1">→ señal incremental (cuadratura)</div><div class="d2">Opcional. El Vortex ya trae su propio encoder interno, así que normalmente estos no se usan.</div></div>
+  </div>
+</div>
+
+<div class="cols" style="margin-top:16px;">
+  <div class="callout c-rojo">
+    <div class="q">«¿Y si conecto el cable plano al revés?»</div>
+    <div class="a">El conector tiene una <strong>muesca</strong> de un solo lado que impide meterlo volteado — respétala, no lo fuerces. Si lo fuerzas, +5V y GND quedan invertidos y <strong>quemas el encoder</strong>. Antes de energizar, verifica que la muesca del cable coincida con la del puerto en los cuatro módulos.</div>
+  </div>
+  <div class="callout c-azul">
+    <div class="q">«¿Por qué este encoder no va al CAN como el CANcoder?»</div>
+    <div class="a">Porque así el PID de giro <strong>corre dentro del SPARK Flex</strong>, no en el roboRIO. El controlador lee su propio encoder y cierra el lazo localmente. Para tu roboRIO 1 eso es oro: le quitas cuatro lazos de control de encima y bajas el tráfico del bus CAN. Es la razón principal por la que el código está escrito así.</div>
+  </div>
+</div>
+
+<h2>Potencia — calibres y breakers</h2>
+
+<p>Aquí se decide si el robot se apaga en las subidas. Un cable delgado de más es resistencia extra, y resistencia extra es caída de voltaje justo cuando más corriente pides.</p>
+
+<div class="scroll">
+<table>
+  <thead>
+    <tr><th>Tramo</th><th>Calibre</th><th>Protección</th><th>Por qué</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Batería → breaker principal</td><td class="mono">6 AWG</td><td>—</td><td>Pasa <em>toda</em> la corriente del robot. Nunca más delgado.</td></tr>
+    <tr><td>Breaker principal → PDH</td><td class="mono">6 AWG</td><td>120 A</td><td>Mismo caso. El breaker de 120 A es el que exige la regla.</td></tr>
+    <tr><td>PDH → Kraken tracción ×4</td><td class="mono">12 AWG</td><td>40 A</td><td>Canal de alta corriente del PDH. Es el máximo que acepta.</td></tr>
+    <tr><td>PDH → SPARK Flex ×4</td><td class="mono">12 AWG</td><td>40 A</td><td>Aunque el giro consuma poco, el arranque pide picos.</td></tr>
+    <tr><td>PDH → Kraken torreta</td><td class="mono">12 AWG</td><td>30 A</td><td>Mueve poca masa; en software está limitado a 20 A.</td></tr>
+    <tr><td>PDH → Kraken lanzador</td><td class="mono">12 AWG</td><td>40 A</td><td>Acelerar el volante desde cero es el pico más alto del robot.</td></tr>
+    <tr><td>PDH → roboRIO</td><td class="mono">18 AWG</td><td>conector dedicado</td><td>El PDH trae una salida específica para el roboRIO. Úsala, no un canal normal.</td></tr>
+    <tr><td>PDH → radio</td><td class="mono">18 AWG</td><td>canal bajo, 10 A</td><td>Canal de baja corriente. Si tienes Radio Power Module, va ahí.</td></tr>
+    <tr><td>PDH → Limelight</td><td class="mono">18 AWG</td><td>canal bajo, 10 A</td><td>Nunca lo alimentes por el USB del roboRIO: se reinicia con la vibración.</td></tr>
+    <tr><td>navX2-MXP</td><td class="mono">—</td><td>ninguna</td><td>Se alimenta del propio puerto MXP. No lleva cable de potencia.</td></tr>
+    <tr><td>CAN (todo el bus)</td><td class="mono">22 AWG</td><td>ninguna</td><td>Par trenzado amarillo/verde. Trenzado de verdad, no dos cables paralelos.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p class="sub" style="margin-top:12px;">El REV PDH tiene <strong>20 canales de alta corriente</strong> (40 A máx c/u) y <strong>3 de baja corriente</strong> (15 A máx) más uno conmutable. Te sobran: usas 10 de alta y 2 de baja.</p>
+
+<div class="callout c-rojo" style="margin-top:18px;">
+  <div class="q">«¿Por qué se apaga el robot cuando subo una rampa?»</div>
+  <div class="a">Porque la batería no es una fuente perfecta: tiene una resistencia interna de ~0.018 Ω. Cuando los cuatro módulos jalan a la vez, la caída es <span class="mono">V = 12.6 − (I × 0.018)</span>. Con 250 A eso deja <strong>8.1 V</strong>. Tu <strong>roboRIO 1 hace brownout cerca de 6.8 V</strong> y apaga las salidas para salvarse.<br><br>El cableado ayuda (calibre correcto, conectores apretados, batería sana), pero la defensa real está en el software y <strong>ya está programada</strong>: límites de corriente de supply, rampas, limitador de aceleración y una guardia que pone el robot lento en vez de dejarlo morir. Detalle completo en <span class="mono">docs/05-corriente-y-brownout.md</span>.</div>
+</div>
+
+<h2>Orden de encendido y seguridad</h2>
+
+<div class="cols">
+  <div class="caja">
+    <div style="font-size:11px; letter-spacing:0.09em; text-transform:uppercase; color:#2f9d45; margin-bottom:10px;">Siempre en este orden</div>
+    <div style="font-size:13.5px; line-height:1.9;">
+      <strong>1.</strong> Robot sobre bloques, ruedas en el aire<br>
+      <strong>2.</strong> Conecta la batería (SB50)<br>
+      <strong>3.</strong> Cierra el breaker principal<br>
+      <strong>4.</strong> Espera a que el radio termine (~40 s)<br>
+      <strong>5.</strong> Conecta el Driver Station<br>
+      <strong>6.</strong> Verifica que aparecen todos los CAN ID<br>
+      <strong>7.</strong> Hasta entonces, habilita
+    </div>
+  </div>
+  <div class="caja">
+    <div style="font-size:11px; letter-spacing:0.09em; text-transform:uppercase; color:#e05c54; margin-bottom:10px;">Nunca</div>
+    <div style="font-size:13.5px; line-height:1.9;">
+      <strong>·</strong> Habilitar con las ruedas en el suelo la primera vez<br>
+      <strong>·</strong> Conectar la batería al revés — no hay protección<br>
+      <strong>·</strong> Trabajar en el robot con el breaker cerrado<br>
+      <strong>·</strong> Alimentar el Limelight por el USB del roboRIO<br>
+      <strong>·</strong> Dejar el navX suelto: mide ángulos, si vibra miente<br>
+      <strong>·</strong> Mover el robot durante la calibración del navX
+    </div>
+  </div>
+</div>
+
+<h2>Antes de energizar por primera vez</h2>
+
+<p>Con el <strong>breaker principal abierto</strong> y la batería <strong>desconectada</strong>, multímetro en mano:</p>
+
+<div class="caja">
+  <div class="check"><div class="box"></div><div><strong>Continuidad del CAN.</strong> Mide resistencia entre CAN-H (amarillo) y CAN-L (verde) en cualquier punto del bus. Debe dar <strong>~60 Ω</strong>, que son las dos de 120 Ω en paralelo. Si da 120 Ω te falta una terminación; si da infinito el bus está cortado en algún lado.</div></div>
+  <div class="check"><div class="box"></div><div><strong>Ningún corto en potencia.</strong> Mide entre el positivo y el negativo de entrada del PDH. Debe dar resistencia alta, nunca cerca de cero.</div></div>
+  <div class="check"><div class="box"></div><div><strong>Polaridad.</strong> Rojo a rojo, negro a negro, en cada motor y en la batería. Revísalo dos veces: no hay protección contra inversión.</div></div>
+  <div class="check"><div class="box"></div><div><strong>Muescas de los cables planos.</strong> Los cuatro data ports del SPARK Flex, con el conector alineado a su muesca.</div></div>
+  <div class="check"><div class="box"></div><div><strong>Breakers puestos.</strong> Cada canal usado del PDH con su breaker del amperaje de la tabla. Un canal sin breaker no entrega corriente.</div></div>
+  <div class="check"><div class="box"></div><div><strong>Tornillos apretados.</strong> Especialmente las terminales de la batería y del breaker principal. Un conector flojo es resistencia, y resistencia es brownout.</div></div>
+  <div class="check"><div class="box"></div><div><strong>Nada rozando.</strong> Que ningún cable toque una rueda, un engrane o un borde filoso del chasis.</div></div>
+</div>
+
+<h2>Tabla de CAN ID — imprime esto y pégalo en la caja</h2>
+
+<div class="scroll">
+<table>
+  <thead>
+    <tr><th>CAN ID</th><th>Dispositivo</th><th>Función</th><th>Ubicación física</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="mono">1</td><td>Kraken X60</td><td>Tracción</td><td>Módulo delantero izquierdo</td></tr>
+    <tr><td class="mono">2</td><td>SPARK Flex + Vortex</td><td>Giro</td><td>Módulo delantero izquierdo</td></tr>
+    <tr><td class="mono">3</td><td>Kraken X60</td><td>Tracción</td><td>Módulo delantero derecho</td></tr>
+    <tr><td class="mono">4</td><td>SPARK Flex + Vortex</td><td>Giro</td><td>Módulo delantero derecho</td></tr>
+    <tr><td class="mono">5</td><td>Kraken X60</td><td>Tracción</td><td>Módulo trasero izquierdo</td></tr>
+    <tr><td class="mono">6</td><td>SPARK Flex + Vortex</td><td>Giro</td><td>Módulo trasero izquierdo</td></tr>
+    <tr><td class="mono">7</td><td>Kraken X60</td><td>Tracción</td><td>Módulo trasero derecho</td></tr>
+    <tr><td class="mono">8</td><td>SPARK Flex + Vortex</td><td>Giro</td><td>Módulo trasero derecho</td></tr>
+    <tr><td class="mono">9</td><td>Kraken X60</td><td>Azimuth torreta</td><td>Base de la torreta</td></tr>
+    <tr><td class="mono">10</td><td>CANcoder</td><td>Ángulo absoluto torreta</td><td>Eje de la torreta</td></tr>
+    <tr><td class="mono">11</td><td>Kraken X60</td><td>Lanzador</td><td>Volante de la torreta</td></tr>
+    <tr><td class="mono">—</td><td>navX2-MXP</td><td>Giroscopio</td><td>Puerto MXP del roboRIO</td></tr>
+    <tr><td class="mono">—</td><td>Limelight</td><td>AprilTags</td><td>Ethernet al radio o switch</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p class="sub" style="margin-top:14px;">Estos IDs coinciden exactamente con <span class="mono">constants::can</span> en <span class="mono">src/main/include/Constants.h</span>. Si cambias uno en el robot, cámbialo también ahí o el motor no responderá.</p>
+
+<hr>
+
+<p class="sub" style="margin-bottom:4px;"><strong>Pendiente de confirmar antes de energizar:</strong> el orden de pines del data port está dibujado con la función de cada uno, pero la numeración física (cuál es el pin 1) hay que verificarla contra la serigrafía del SPARK Flex que tengan en mano. Confirmen también si su distribución es REV PDH o CTRE PDP: con PDP el radio se alimenta por VRM y el roboRIO por un canal con fusible de 10 A, no por conector dedicado.</p>
+
+</div>

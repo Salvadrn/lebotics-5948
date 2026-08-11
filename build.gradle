@@ -1,0 +1,64 @@
+plugins {
+    id "cpp"
+    id "google-test-test-suite"
+    id "edu.wpi.first.GradleRIO" version "2026.2.1"
+}
+
+deploy {
+    targets {
+        roborio(getTargetTypeClass('RoboRIO')) {
+            team = project.frc.getTeamOrDefault(5948)
+            debug = project.frc.getDebugOrDefault(false)
+
+            artifacts {
+                frcCpp(getArtifactTypeClass('FRCNativeArtifact')) {
+                }
+
+                frcStaticFileDeploy(getArtifactTypeClass('FileTreeArtifact')) {
+                    files = project.fileTree('src/main/deploy')
+                    directory = '/home/lvuser/deploy'
+                    deleteOldFiles = false
+                }
+            }
+        }
+    }
+}
+
+def deployArtifact = deploy.targets.roborio.artifacts.frcCpp
+
+def includeDesktopSupport = true
+
+model {
+    components {
+        frcUserProgram(NativeExecutableSpec) {
+            targetPlatform wpi.platforms.roborio
+            if (includeDesktopSupport) {
+                targetPlatform wpi.platforms.desktop
+            }
+
+            binaries.all {
+                it.cppCompiler.args.add('-Wno-error=deprecated-declarations')
+            }
+
+            sources.cpp {
+                source {
+                    srcDir 'src/main/cpp'
+                    include '**/*.cpp', '**/*.cc'
+                }
+                exportedHeaders {
+                    srcDir 'src/main/include'
+                }
+            }
+
+            deployArtifact.component = it
+
+            wpi.cpp.enableExternalTasks(it)
+            wpi.sim.enable(it)
+            wpi.cpp.vendor.cpp(it)
+            wpi.cpp.deps.wpilib(it)
+        }
+    }
+}
+
+wpi.sim.addGui().defaultEnabled = true
+wpi.sim.addDriverstation()
