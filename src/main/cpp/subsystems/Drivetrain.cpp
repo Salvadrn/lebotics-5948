@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <numbers>
 
 #include <frc/RobotController.h>
 #include <frc/smartdashboard/SmartDashboard.h>
@@ -91,6 +92,19 @@ void Drivetrain::PublishTelemetry() {
                                   IsGyroConnected());
   frc::SmartDashboard::PutNumber("Drivetrain/HeadingGrados",
                                  GetHeading().Degrees().value());
+
+  frc::SmartDashboard::PutNumber(
+      "Calibracion/FrontLeftRotaciones",
+      m_frontLeft.GetSteerAngle().value() / (2.0 * std::numbers::pi));
+  frc::SmartDashboard::PutNumber(
+      "Calibracion/FrontRightRotaciones",
+      m_frontRight.GetSteerAngle().value() / (2.0 * std::numbers::pi));
+  frc::SmartDashboard::PutNumber(
+      "Calibracion/BackLeftRotaciones",
+      m_backLeft.GetSteerAngle().value() / (2.0 * std::numbers::pi));
+  frc::SmartDashboard::PutNumber(
+      "Calibracion/BackRightRotaciones",
+      m_backRight.GetSteerAngle().value() / (2.0 * std::numbers::pi));
 }
 
 void Drivetrain::Drive(units::meters_per_second_t xSpeed,

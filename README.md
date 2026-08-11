@@ -144,9 +144,34 @@ El procedimiento está en [`docs/04-calibracion.md`](docs/04-calibracion.md).
 
 | Documento | De qué trata |
 |---|---|
-| [`docs/cableado.html`](docs/cableado.html) | Diagrama del tablero, calibres, breakers, checklist |
+| [`docs/cableado.html`](docs/cableado.html) | Diagrama del tablero completo, con colores y leyenda |
+| [`docs/02-cableado.md`](docs/02-cableado.md) | Cableado pin por pin, breakers, calibres, verificación |
+| [`docs/04-calibracion.md`](docs/04-calibracion.md) | **Obligatorio antes de manejar**: offsets de los encoders |
 | [`docs/05-corriente-y-brownout.md`](docs/05-corriente-y-brownout.md) | Por qué se apaga el robot y cómo lo evitamos |
+| [`docs/roles/`](docs/roles/) | Cómo se reparte el trabajo entre el equipo de software |
+
+## Cómo trabajamos
+
+El software se trabaja en **sesiones separadas por área** — chasis, superestructura, visión,
+autónomo, eléctrico y piloto — cada una con su territorio de archivos y sus pendientes.
+La repartición está en [`docs/roles/`](docs/roles/README.md).
+
+La regla que más importa: **robot en bloques, ruedas en el aire**, siempre que se estrene
+código de movimiento.
+
+## Estado
+
+- [x] Swerve completo con odometría y fusión de visión
+- [x] Torreta con soft limits y lanzador con control de velocidad
+- [x] Visión: distancia por AprilTag y pose al estimator
+- [x] Cuatro capas de protección contra brownout
+- [ ] Offsets de encoders calibrados ← **lo primero que hay que hacer**
+- [ ] Caracterización con SysId (kS/kV/kA reales)
+- [ ] Autónomo (falta elegir PathPlanner o Choreo)
 
 ## Licencia
 
 MIT — ver [LICENSE](LICENSE).
+
+Si eres de otro equipo y algo de aquí te sirve, úsalo. Si te ahorró un fin de semana,
+nos daría gusto saberlo.
