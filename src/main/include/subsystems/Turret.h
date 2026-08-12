@@ -33,15 +33,16 @@ class Turret : public frc2::SubsystemBase {
   bool IsWithinRange(units::degree_t angle) const;
 
   // Verificación de los soft limits y calibración del offset.
-  // Ver docs/06-torreta.md.
+  // Ver docs/08-torreta.md.
 
   // Lectura cruda del CANcoder, en rotaciones. Con offsets::kTurret en 0_tr,
   // este es el número que hay que anotar con la torreta en su centro.
   units::turn_t GetRawCancoderPosition();
 
-  // Cuál de los dos soft limits está frenando al motor ahora mismo. Sirven para
-  // confirmar a mano que el límite de cada lado es el que le toca: empujar la
-  // torreta hacia +110° debe prender el de adelante, no el de atrás.
+  // Cuál de los dos soft limits está frenando al motor ahora mismo. Ojo: el
+  // TalonFX solo levanta la falla si además se le está pidiendo salida hacia ese
+  // lado, así que no sirve con el robot deshabilitado — hay que empujar contra
+  // el límite con voltaje bajo para verlos.
   bool IsForwardSoftLimitTripped();
   bool IsReverseSoftLimitTripped();
 

@@ -1,0 +1,275 @@
+# Calibrar la distancia por visión
+
+**Toda la distancia del robot sale de tres números**, y hoy dos son supuestos y el tercero
+estaba equivocado. Esta guía los convierte en números medidos. Toma unos 30 minutos con
+una cinta métrica, un tag impreso y el robot encendido.
+
+## La fórmula
+
+```
+distancia = (altura_del_tag − altura_de_la_camara) / tan(pitch_camara + ty)
+```
+
+`ty` lo da el Limelight. Los otros tres los ponemos nosotros en `Constants.h`, y de lo bien
+que estén medidos depende todo:
+
+| Entrada | Qué tan fácil es medirla | Cómo la conseguimos |
+|---|---|---|
+| `kTagHeight` | Trivial: está publicada | Del layout oficial de WPILib (abajo) |
+| `kCameraHeight` | Fácil: cinta métrica, ±5 mm | Se mide (paso 1) |
+| `kCameraPitch` | **Difícil**: un transportador da ±2° | **No se mide — se resuelve** (paso 2) |
+
+Ese último renglón es el punto de toda esta guía. Medir un ángulo pegado a un chasis, con
+un transportador, es la peor forma de conseguirlo. Se resuelve con datos que sí se pueden
+medir bien.
+
+---
+
+## Lo primero que encontramos: el tag estaba a la altura de 2024
+
+`kTagHeight` estaba en **57.13 in**. Ese número es la altura de los tags del *speaker* de
+**Crescendo 2024** (tags 3, 4, 7 y 8). El campo de esta temporada no tiene ningún tag ahí.
+
+Sacamos las alturas reales del layout que trae WPILib 2026.2.1 — es la fuente oficial, la
+misma que carga `AprilTagFieldLayout`:
+
+| Fila | Altura del centro | Tags |
+|---|---|---|
+| Alta | **44.25 in** (1.12395 m) | 2, 3, 4, 5, 8, 9, 10, 11, 18, 19, 20, 21, 24, 25, 26, 27 |
+| Media | **35.00 in** (0.88900 m) | 1, 6, 7, 12, 17, 22, 23, 28 |
+| Baja | **21.75 in** (0.55245 m) | 13, 14, 15, 16, 29, 30, 31, 32 |
+
+Las alturas son idénticas en las dos variantes del campo (AndyMark y Welded), así que no
+hay que elegir.
+
+Con el valor viejo, viendo un tag de la fila alta, el código reportaba esto:
+
+| Distancia real | Lo que reportaba el código |
+|---|---|
+| 1 m | 1.64 m |
+| 2 m | 3.27 m |
+| 3 m | 4.91 m |
+| 4 m | 6.54 m |
+
+Más del **60 % de error**, y creciendo. Ninguna calibración de pitch arregla eso, porque el
+error no está en el ángulo: está en el `Δh` de arriba de la división.
+
+**Ya está corregido en el código**: `kTagHeight` desapareció y en su lugar hay
+`constants::vision::TagHeight(tagId)`, que devuelve la altura de la fila a la que pertenece
+el tag que la cámara está viendo. Un solo `kTagHeight` no puede existir en un campo con tres
+filas de tags.
+
+---
+
+## Paso 1 — Medir la altura de la cámara
+
+Con el robot **en el piso**, con **batería puesta** y **bumpers montados**. El peso comprime
+las ruedas y baja el chasis; medir en bloques da un número que no es el que va a tener en la
+cancha.
+
+Se mide del **piso al centro del lente**, no al tornillo de arriba ni a la carcasa.
+
+Anótenlo con dos decimales en pulgadas. Un error de **1 pulgada** aquí se traduce en:
+
+| Distancia real | Error si la altura está 1 in mal |
+|---|---|
+| 1 m | 4.9 cm |
+| 2 m | 9.9 cm |
+| 3 m | 14.8 cm |
+| 4 m | 19.8 cm |
+
+Es el error más benigno de los tres, porque crece de forma lineal y proporcional. Aun así,
+midan bien: es gratis.
+
+## Paso 2 — El pitch no se mide, se resuelve
+
+La idea: si conocemos la altura de la cámara, la altura del tag y la distancia real medida
+con cinta, entonces el pitch es **lo único que falta** en la ecuación y se despeja:
+
+```
+pitch = atan(Δh / distancia_real) − ty
+```
+
+El código ya calcula esto solo. En el dashboard, mientras el robot está encendido y viendo
+un tag:
+
+1. En **`Vision/Calib/DistanciaRealMetros`** escriban la distancia que midieron con la cinta.
+2. Esperen a que **`Vision/Calib/Muestras`** llegue a 50 (un segundo).
+3. Lean **`Vision/Calib/PitchImplicadoGrados`**. Ese es el pitch de su cámara.
+
+El promedio de 50 muestras existe porque `ty` tiembla. Si
+**`Vision/Calib/TyDesviacionGrados`** pasa de 0.3°, algo vibra o la exposición está muy
+alta — arréglenlo antes de anotar nada.
+
+### Dónde se mide la distancia
+
+Esta es la equivocación que más veces arruina esta calibración:
+
+```
+        cámara
+          ▼
+    ┌─────────┐                                    ██  ← tag
+    │  robot  │                                    ██
+    └─────────┘                                    ██
+    ├──── NO ─────────────────────────────────────►│   desde el bumper
+         ├──── SÍ ────────────────────────────────►│   desde el punto del piso
+                                                        justo debajo del lente,
+                                                        hasta la pared del tag
+```
+
+La fórmula da la distancia **horizontal del lente al plano del tag**. Si miden desde el
+bumper, están metiendo un error constante del tamaño de lo que sobresale el robot.
+
+### Condiciones de cada estación
+
+- El tag **centrado horizontalmente**: `Vision/Calib/Centrado` debe estar en `true`
+  (es `|tx| < 3°`). Un tag en la esquina del cuadro mete error en `ty`.
+- El robot **cuadrado** al tag, no en diagonal.
+- El mismo tag en las cuatro estaciones, y de la fila que van a usar en partido.
+
+Anoten, para cada estación, la distancia de la cinta y el `Vision/Calib/TyPromedioGrados`:
+
+| Estación | Distancia (cinta) | `TyPromedioGrados` | `PitchImplicadoGrados` |
+|---|---|---|---|
+| 1 |  |  |  |
+| 2 |  |  |  |
+| 3 |  |  |  |
+| 4 |  |  |  |
+
+Si los cuatro `PitchImplicadoGrados` no se parecen entre sí (±0.3°), **no sigan**: el pitch
+es uno solo y no cambia con la distancia. Que varíe significa que otra cosa está mal —
+casi siempre la distancia medida desde el bumper, o el tag de otra fila.
+
+## Paso 3 — Resolver con las cuatro estaciones
+
+Una sola estación ya da un pitch. Cuatro dan uno mejor y, sobre todo, **avisan cuando algo
+está mal**. La herramienta hace el ajuste por mínimos cuadrados:
+
+```bash
+python3 tools/vision-pitch.py --camara 22.5in 1.0=17.68 2.0=4.10 3.0=-0.89 4.0=-3.39
+```
+
+Los pares son `distancia_en_metros=ty_promedio_en_grados`. Si el tag no es de la fila alta,
+agreguen `--tag 35in`.
+
+Además del pitch, imprime:
+
+- la tabla de validación con el error a cada distancia,
+- un **ajuste conjunto** que deja libres altura *y* pitch — si ese ajuste pide una altura
+  muy distinta a la que midieron con cinta, la cinta o la altura del tag están mal,
+- las líneas exactas para pegar en `Constants.h`.
+
+## Paso 4 — Escribir y volver a validar
+
+```cpp
+namespace vision {
+inline constexpr units::meter_t kCameraHeight = 22.50_in;
+inline constexpr units::degree_t kCameraPitch = 11.27_deg;
+inline constexpr bool kCameraGeometryMedida = true;
+}
+```
+
+`kCameraGeometryMedida` no lo usa ningún cálculo: sale en el dashboard como
+`Vision/GeometriaMedida` para que cualquiera que vea el robot sepa de un vistazo si está
+mirando números medidos o supuestos. Pónganlo en `true` cuando lo estén.
+
+Después de desplegar, repitan las cuatro estaciones leyendo **`Vision/Calib/ErrorMetros`**.
+Esa es la tabla que pide el rol de Visión:
+
+| Distancia real | `Vision/DistanciaMetros` | Error | ¿Pasa? |
+|---|---|---|---|
+| 1 m |  |  | < 5 cm |
+| 2 m |  |  | < 10 cm |
+| 3 m |  |  | < 15 cm |
+| 4 m |  |  | < 25 cm |
+
+## Qué significa cada patrón de error
+
+| Lo que ven | Qué es | Qué hacer |
+|---|---|---|
+| Error casi cero y luego crece rápido con la distancia | Pitch mal | Repitan el paso 2; el pitch domina lejos |
+| Error parejo y proporcional a la distancia (mismo %) | Altura de cámara o de tag mal | Vuelvan a medir; verifiquen la fila del tag |
+| Error constante en metros, igual a 1, 2, 3 y 4 m | Midieron desde el bumper | Midan desde debajo del lente |
+| Errores que no se repiten entre corridas | `ty` inestable | Bajen exposición, revisen que la cámara no vibre |
+
+La razón de que el pitch se note más lejos está en la geometría: con la cámara a 22.5 in y
+un tag de la fila alta, **1° de error de pitch** vale 4 cm a 1 m, pero **47 cm a 4 m**.
+
+---
+
+## La fila baja de tags no sirve para trigonometría
+
+Con la cámara a 24 in, los tags de 21.75 in quedan **por debajo** de la cámara: el `Δh` es
+de −2.25 in. Con un `Δh` tan chico la fórmula se vuelve inútil:
+
+| Distancia real | Lo que da la fórmula con 1° de error de pitch |
+|---|---|
+| 1 m | 1.44 m |
+| 2 m | 5.14 m |
+| 3 m | 35.84 m |
+| 4 m | −18.05 m |
+
+Por eso el código ahora **descarta la distancia cuando `|Δh|` es menor a
+`kMinTrustedHeightDelta` (4 in)**. La cámara sigue reportando el tag y `tx` sigue sirviendo
+para apuntar la torreta; lo único que se descarta es la distancia, que a esa geometría es
+ruido con formato de número.
+
+Para esos tags: usen `botpose`, que no depende de este triángulo.
+
+### Si la cámara todavía se puede mover
+
+Bajarla ayuda a las tres filas a la vez. Con la cámara a 12 in, la fila baja pasa a tener
+`Δh = 9.75 in` y vuelve a ser utilizable.
+
+Y sobre el pitch de montaje: **25° es demasiado para este campo**. Con la cámara a 24 in
+mirando un tag de la fila alta a 3 m, el ángulo que centra el tag en el cuadro es de unos
+**10°**, no 25. Con 25° el tag se va al borde inferior de la imagen justo cuando más lejos
+está — que es cuando peor se lee. Si pueden ajustar el montaje, apunten a que `ty ≈ 0` a la
+distancia a la que más van a disparar.
+
+---
+
+## Verificar la latencia (el otro pendiente del rol)
+
+El dashboard publica dos números que deberían parecerse:
+
+- **`Vision/Latencia/BotposeMs`** — el índice 6 de `botpose_wpiblue`
+- **`Vision/Latencia/TlMasClMs`** — `tl` + `cl`, que existen desde hace muchas versiones
+
+Si se parecen (±5 ms), el índice 6 es la latencia y el pose estimator está recibiendo el
+timestamp correcto. Si `BotposeMs` marca `-1`, algo cambió en el firmware y hay que revisar
+el orden del arreglo antes de confiar en la fusión de pose.
+
+## Trampas
+
+- **La cámara tiene que estar sin roll.** La fórmula supone que la imagen está nivelada. Si
+  el Limelight está chueco unos grados, `ty` mezcla altura con lateral y la calibración no
+  cierra nunca.
+- **No calibren con el tag impreso pegado torcido.** Si el tag no está vertical, su centro
+  no está donde creen.
+- **Impriman el tag al tamaño correcto** si están practicando fuera del campo. Un tag a
+  escala incorrecta no afecta a `ty` — pero sí a `botpose`, y van a perseguir un fantasma.
+- **La altura del tag es la del centro**, no la del borde inferior.
+
+## Referencia de llaves del dashboard
+
+| Llave | Qué es |
+|---|---|
+| `Vision/VeTag` | Hay un tag a la vista |
+| `Vision/TagID` | Cuál |
+| `Vision/AlturaTagPulgadas` | La altura que el código está usando para ese tag (`-1` = tag desconocido) |
+| `Vision/TyGrados` | `ty` crudo |
+| `Vision/DistanciaMetros` | Distancia calculada (`-1` = no confiable) |
+| `Vision/GeometriaMedida` | `false` mientras la altura y el pitch sean supuestos |
+| `Vision/Calib/DistanciaRealMetros` | **Entrada**: lo que dice la cinta |
+| `Vision/Calib/Muestras` | Cuántas muestras lleva el promedio (llega a 50) |
+| `Vision/Calib/TyPromedioGrados` | `ty` promediado |
+| `Vision/Calib/TyDesviacionGrados` | Qué tanto tiembla `ty` |
+| `Vision/Calib/PitchImplicadoGrados` | **El pitch de su cámara** |
+| `Vision/Calib/AlturaImplicadaPulgadas` | La altura que explicaría la lectura con el pitch actual |
+| `Vision/Calib/ErrorMetros` | Distancia calculada − distancia real |
+| `Vision/Calib/Centrado` | `|tx| < 3°` |
+| `Vision/Latencia/BotposeMs` · `Vision/Latencia/TlMasClMs` | Para el chequeo de latencia |
+
+El promedio se reinicia solo cuando cambian `DistanciaRealMetros` o cuando la cámara cambia
+de tag. No hay que apretar nada entre estaciones.

@@ -31,7 +31,13 @@ Dos caminos, ambos en el código:
    ```
    Simple y robusto. Su debilidad: depende de que la altura y el pitch de la cámara estén
    bien medidos. Un error de 2° en el pitch se convierte en decenas de centímetros a
-   distancia media.
+   distancia media — con la cámara a 22.5" y un tag de la fila alta, 1° vale 4 cm a 1 m y
+   47 cm a 4 m.
+
+   La altura del tag no es una constante: Rebuilt 2026 tiene tres filas y el código la
+   busca por ID con `vision::TagHeight(tagId)`. Cuando el tag queda casi a la altura de la
+   cámara (`|Δh| < kMinTrustedHeightDelta`) la distancia se descarta, porque ahí la
+   tangente amplifica cualquier error de pitch hasta volverla basura.
 
 2. **`botpose_wpiblue`** para alimentar el pose estimator del chasis con la posición
    absoluta en la cancha. Más potente, más ruidoso.
@@ -49,13 +55,22 @@ Dos caminos, ambos en el código:
 
 ## Lo primero que te toca
 
-1. **Medir de verdad `kCameraHeight` y `kCameraPitch`.** Están puestos como supuestos
-   (24" y 25°). Esto es lo que más afecta la precisión de la distancia.
-2. **Poner la altura real del AprilTag** de la temporada en `kTagHeight`.
-3. **Validar la distancia contra una cinta métrica** a 1 m, 2 m, 3 m y 4 m. Haz una tabla.
-   Si el error crece de forma no lineal, el pitch está mal.
-4. **Verificar la latencia**: el índice 6 de `botpose_wpiblue` es la latencia total en ms
-   en el firmware actual del Limelight. Confírmalo contra la versión que tengan instalada.
+Todo el procedimiento está en [`docs/07-vision-distancia.md`](../07-vision-distancia.md).
+El código ya trae la telemetría y la herramienta para hacerlo; falta la parte física.
+
+1. ~~**Poner la altura real del AprilTag**~~ — hecho. `kTagHeight` estaba en 57.13", que es
+   la altura del speaker de Crescendo 2024. Rebuilt 2026 tiene tres filas de tags (21.75",
+   35" y 44.25"), así que ya no hay una constante sino `vision::TagHeight(tagId)`.
+2. **Medir `kCameraHeight` con cinta**, con el robot en el piso, con batería y bumpers.
+3. **Resolver `kCameraPitch`** con `Vision/Calib/PitchImplicadoGrados` y
+   `tools/vision-pitch.py`. No lo midas con transportador.
+4. **Validar contra la cinta** a 1, 2, 3 y 4 m, y llenar la tabla del doc.
+5. **Verificar la latencia**: el dashboard publica `Vision/Latencia/BotposeMs` (índice 6 de
+   `botpose_wpiblue`) junto a `Vision/Latencia/TlMasClMs`. Si no se parecen, el índice
+   cambió en el firmware que tengan instalado.
+
+Mientras `kCameraGeometryMedida` siga en `false`, la distancia que ve el equipo sale de
+supuestos y el dashboard lo dice.
 
 ## Trampas
 
@@ -71,3 +86,10 @@ Dos caminos, ambos en el código:
 - `./gradlew build` en verde
 - Tabla de distancia medida vs distancia real, con cinta métrica
 - El pose estimator no debe "saltar" cuando el robot está quieto viendo un tag
+
+## Lo que consume otro rol
+
+`GetTarget()` devuelve el tag aunque no pueda calcular la distancia: `tagHeight` y
+`distance` son `std::optional`. Superestructura sigue recibiendo `tx` para apuntar la
+torreta aunque la distancia se descarte por geometría o por lejanía — antes, un tag a más
+de `kMaxTrustedDistance` dejaba a la torreta sin ángulo aunque lo estuviera viendo perfecto.

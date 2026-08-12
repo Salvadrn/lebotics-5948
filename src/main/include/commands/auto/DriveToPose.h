@@ -28,6 +28,7 @@ class DriveToPose : public frc2::CommandHelper<frc2::Command, DriveToPose> {
 
   Drivetrain& m_drivetrain;
   frc::Pose2d m_target;
+  units::meters_per_second_t m_maxSpeed;
 
   frc::ProfiledPIDController<units::meters> m_distanceController;
   frc::ProfiledPIDController<units::radians> m_thetaController;

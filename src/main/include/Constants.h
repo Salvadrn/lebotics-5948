@@ -111,7 +111,7 @@ static_assert(kBackRight >= 0_tr && kBackRight < 1_tr,
 // Sin medir. El CANcoder **suma** este valor a su lectura, así que vale
 // -(lectura cruda con la torreta en su centro mecánico). Mientras esté en 0_tr,
 // los soft limits de la torreta protegen un rango arbitrario, no ±110° reales.
-// Procedimiento: docs/06-torreta.md
+// Procedimiento: docs/08-torreta.md
 inline constexpr units::turn_t kTurret = 0_tr;
 
 }  // namespace offsets
@@ -202,6 +202,64 @@ inline constexpr units::revolutions_per_minute_t kShooterToleranceRpm = 75_rpm;
 inline constexpr units::second_t kShooterSpinUpTimeout = 3_s;
 
 }  // namespace turret
+
+namespace hood {
+
+// Rango físico del hood, medido desde la horizontal. Son los topes mecánicos
+// reales: el código nunca comanda fuera de aquí.
+inline constexpr units::degree_t kMinAngle = 20_deg;
+inline constexpr units::degree_t kMaxAngle = 55_deg;
+
+inline constexpr int kServoPwmChannel = 0;
+
+// Mapeo del rango físico al comando del servo (0..1). Se calibra a mano: se
+// manda 0.0, se mide el ángulo real, se manda 1.0, se mide otra vez.
+// Si el servo se mueve al revés que el hood, kServoAtMin > kServoAtMax y ya.
+inline constexpr double kServoAtMinAngle = 0.0;
+inline constexpr double kServoAtMaxAngle = 1.0;
+
+// Un servo PWM no tiene encoder: nadie puede confirmar que llegó. Lo único que
+// se puede hacer es estimar por tiempo. Se mide con cronómetro mandándolo de un
+// extremo al otro. Si el hood se traba, esto miente y por eso el disparo
+// automático nunca depende solo de este número.
+inline constexpr units::second_t kFullTravelTime = 0.8_s;
+inline constexpr units::second_t kSettleMargin = 0.15_s;
+
+inline constexpr bool kServoCalibrado = false;
+
+static_assert(kMinAngle < kMaxAngle, "El rango del hood está invertido");
+
+}  // namespace hood
+
+namespace shot {
+
+inline constexpr units::meters_per_second_squared_t kGravity{9.80665};
+
+// Altura sobre el piso a la que el proyectil deja el lanzador, y diámetro del
+// volante. Los dos hay que medirlos en el robot armado.
+inline constexpr units::meter_t kReleaseHeight = 24_in;
+inline constexpr units::meter_t kFlywheelDiameter = 4_in;
+
+// EL número que hace o rompe el modelo balístico. Es la fracción de la
+// velocidad tangencial del volante que de verdad se le transfiere al proyectil;
+// el resto se pierde en resbalamiento y compresión. La física de la parábola es
+// exacta, esto es lo único empírico. Se calibra con tiros reales — el
+// procedimiento está en docs/07-tiro-balistico.md.
+inline constexpr double kTransferEfficiency = 0.55;
+
+inline constexpr units::revolutions_per_minute_t kMaxShooterSpeed = 5500_rpm;
+inline constexpr units::revolutions_per_minute_t kMinShooterSpeed = 800_rpm;
+
+// Debajo de esta distancia la parábola se vuelve casi vertical y el modelo
+// pierde sentido: hay que tirar de cerca a mano.
+inline constexpr units::meter_t kMinSolvableDistance = 0.8_m;
+
+inline constexpr bool kEficienciaCalibrada = false;
+
+static_assert(kTransferEfficiency > 0.0 && kTransferEfficiency <= 1.0,
+              "La eficiencia de transferencia es una fracción en (0, 1]");
+
+}  // namespace shot
 
 namespace vision {
 

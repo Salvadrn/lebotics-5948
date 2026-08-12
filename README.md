@@ -148,7 +148,10 @@ El procedimiento está en [`docs/04-calibracion.md`](docs/04-calibracion.md).
 | [`docs/02-cableado.md`](docs/02-cableado.md) | Cableado pin por pin, breakers, calibres, verificación |
 | [`docs/04-calibracion.md`](docs/04-calibracion.md) | **Obligatorio antes de manejar**: offsets de los encoders |
 | [`docs/05-corriente-y-brownout.md`](docs/05-corriente-y-brownout.md) | Por qué se apaga el robot y cómo lo evitamos |
+| [`docs/07-vision-distancia.md`](docs/07-vision-distancia.md) | Calibrar la distancia por AprilTag: altura, pitch y validación con cinta |
 | [`docs/06-baterias.md`](docs/06-baterias.md) | Probar baterías con probador de carga y cuáles retirar |
+| [`docs/08-torreta.md`](docs/08-torreta.md) | **Obligatorio antes de darle potencia a la torreta**: offset del CANcoder, dirección y soft limits |
+| [`docs/09-autonomo.md`](docs/09-autonomo.md) | PathPlanner vs Choreo, las rutinas que hay y la prueba del cuadrado |
 | [`docs/10-dashboard.md`](docs/10-dashboard.md) | Las cuatro cosas que el piloto lee en partido y cómo cargar el layout de Elastic |
 | [`docs/roles/`](docs/roles/) | Cómo se reparte el trabajo entre el equipo de software |
 
@@ -168,8 +171,14 @@ código de movimiento.
 - [x] Visión: distancia por AprilTag y pose al estimator
 - [x] Cuatro capas de protección contra brownout
 - [ ] Offsets de encoders calibrados ← **lo primero que hay que hacer**
+- [ ] Torreta: offset del CANcoder medido y soft limits verificados
+      ([`docs/08-torreta.md`](docs/08-torreta.md)) ← **antes de darle potencia a la torreta**
+- [ ] Altura y pitch de la cámara medidos ([`docs/07-vision-distancia.md`](docs/07-vision-distancia.md))
 - [ ] Caracterización con SysId (kS/kV/kA reales)
-- [ ] Autónomo (falta elegir PathPlanner o Choreo)
+- [x] Autónomo: PathPlanner elegido e instalado, cuatro rutinas y selector
+      ([`docs/09-autonomo.md`](docs/09-autonomo.md))
+- [ ] Autónomo con trayectorias: falta `GetRobotRelativeSpeeds()` en el chasis y pesar el
+      robot para el `RobotConfig` de PathPlanner
 - [x] Dashboard del piloto: cuatro indicadores y layout de Elastic en el deploy
       ([`docs/10-dashboard.md`](docs/10-dashboard.md))
 - [ ] Fallback a robot-relative si se cae el giroscopio (y su foco en la pestaña de Partido)

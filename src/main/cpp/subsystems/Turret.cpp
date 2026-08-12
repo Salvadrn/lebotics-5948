@@ -180,7 +180,7 @@ void Turret::PublishTelemetry() {
   frc::SmartDashboard::PutNumber("Torreta/LanzadorAmps",
                                  m_shooterCurrent.GetValue().value());
 
-  // Paso 1 de docs/06-torreta.md: con offsets::kTurret en 0_tr, este es el
+  // Paso 2 de docs/08-torreta.md: con offsets::kTurret en 0_tr, este es el
   // número crudo que se anota con la torreta en su centro mecánico. El offset
   // que va en Constants.h es su negativo.
   frc::SmartDashboard::PutNumber("Calibracion/TorretaRotaciones",
@@ -191,7 +191,7 @@ void Turret::PublishTelemetry() {
   // con la torreta movida a mano y el robot apagado. Empujando con voltaje bajo
   // hacia +110° debe prender el de adelante. Si prende el de atrás, o si la
   // torreta pasa de largo sin que prenda ninguno, la inversión del motor no
-  // concuerda con la del CANcoder — ver docs/06-torreta.md.
+  // concuerda con la del CANcoder — ver docs/08-torreta.md.
   frc::SmartDashboard::PutBoolean("Torreta/LimiteAdelante",
                                   IsForwardSoftLimitTripped());
   frc::SmartDashboard::PutBoolean("Torreta/LimiteAtras",
