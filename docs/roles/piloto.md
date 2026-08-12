@@ -29,9 +29,13 @@ robot pueda hacerlo bien, y que sepa qué está pasando sin adivinar.
 
 | Control | Acción |
 |---|---|
-| Bumper derecho (mantener) | Apuntar torreta con visión |
-| Y (mantener) | Acelerar lanzador |
+| Stick derecho | Hood a mano. Arriba sube el ángulo; centrado = media carrera |
+| Bumper izquierdo (mantener) | Apuntado automático: hood + RPM + torreta. **No dispara** |
+| Bumper derecho (mantener) | Apuntar torreta con visión, sin tocar el lanzador |
+| Y (mantener) | Acelerar lanzador a la velocidad fija |
 | B | Parar torreta y lanzador |
+
+La guía completa para las dos personas está en [`../10-dashboard.md`](../10-dashboard.md).
 
 ## Cómo está procesada la entrada
 
@@ -46,24 +50,48 @@ Si el piloto dice que "se siente lento a responder", el sospechoso es el limitad
 aceleración, no la curva. Coordina con Eléctrico antes de subirlo: es una de las defensas
 contra brownout.
 
-## Lo primero que te toca
+## Lo que ya está hecho
+
+**El dashboard está armado** y documentado en [`../10-dashboard.md`](../10-dashboard.md):
+tres pestañas (Partido, Pits, Calibracion) en `src/main/deploy/elastic-layout.json`, que se
+sube al robot con el código.
+
+La pestaña de Partido tiene cuatro focos grandes — batería, potencia plena, lanzador listo y
+tiro listo — más una tira delgada con el estado del tiro, si ve el tag, y un foco ámbar que
+junta las ocho banderas de "esto todavía trae números de fábrica".
+
+También está el indicador de la guardia de voltaje (`Piloto/PotenciaPlena`), en **ámbar y no
+rojo**: rojo dice "falla" y el piloto deja de jugar; ámbar dice "el robot se está cuidando" y
+sigue jugando más suave, que es lo correcto.
+
+## Lo que falta
 
 1. **Sentar al piloto real a manejar** y ajustar deadband y curva a lo que esa persona
    prefiera. No hay valores correctos universales; hay valores correctos para tu piloto.
-2. **Armar el dashboard.** Lo que ya se publica:
-   - `Bateria/Voltaje` y `Bateria/EscalaGuardia`
-   - `Drivetrain/CorrienteTotal`, `HeadingGrados`, `GiroscopioConectado`
-   - `Torreta/AnguloGrados`, `Torreta/LanzadorRPM`
-   - `Vision/VeTag`, `DistanciaMetros`, `OffsetGrados`, `TagID`
+   **Está pendiente porque necesita al piloto y al robot, no código.** Es lo primero que se
+   hace en cuanto haya tiempo de manejo.
 
-   El piloto no puede leer veinte números en un partido. Elige **tres o cuatro** grandes y
-   visibles: voltaje de batería, si la visión ve el tag, y si el lanzador ya está listo.
-   Lo demás va en una pestaña de diagnóstico para pits.
-3. **Indicador de la guardia de voltaje.** Cuando `EscalaGuardia` baja de 1.0, el robot se
-   está protegiendo. El piloto necesita verlo para no pensar que se descompuso.
-4. **Decidir qué pasa si se cae el giroscopio.** Ahora mismo `GiroscopioConectado` se
-   publica pero nadie reacciona. Sin giroscopio, el field-relative miente y el piloto no se
-   entera. Propón un fallback a robot-relative.
+2. **Fallback a robot-relative si se cae el giroscopio.** `GiroscopioConectado` se publica y
+   está en Pits, pero nadie reacciona. Sin giroscopio el field-relative sigue corriendo con
+   un heading congelado: el robot obedece, pero "adelante" ya no es adelante y el piloto lo
+   descubre chocando.
+
+   **No se hizo porque el cambio va en `Drivetrain::Drive()`, que es territorio de Chasis.**
+   El foco en Partido no se puso a propósito: sin el fallback, solo le avisaría al piloto que
+   ya perdió el control. Las dos cosas van juntas o no van.
+
+3. **Mover el botón A a una combinación menos fácil de picar.** Reinicia el norte del
+   giroscopio a media partida. Propuesta: **Start + A**, o solo en disabled.
+   **Pendiente de que el piloto real opine** — si nunca lo ha picado por accidente, no vale
+   la pena complicar un control que sí usan al alinearse antes del match.
+
+4. **Bajar la frecuencia de la telemetría de calibración.** `Calibracion/*` son 24 valores a
+   50 Hz que solo se miran con el robot en bloques, y `Vision/Calib/*` igual. Es la ganancia
+   de CPU más grande que queda en un roboRIO 1.
+   **Es territorio de Chasis y Visión**, va como propuesta en `10-dashboard.md`.
+
+5. **Probar el dashboard con el robot prendido.** Los diez pasos están al final de
+   `10-dashboard.md`. Compilar no prueba nada aquí.
 
 ## Trampas
 

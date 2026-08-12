@@ -44,6 +44,7 @@ class Dashboard : public frc2::SubsystemBase {
  private:
   void PublishBoolean(std::string_view key, bool value,
                       std::optional<bool>& cache);
+  void PublishCalibrationSummary();
 
   Drivetrain& m_drivetrain;
   Turret& m_turret;

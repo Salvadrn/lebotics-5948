@@ -179,8 +179,8 @@ código de movimiento.
       ([`docs/09-autonomo.md`](docs/09-autonomo.md))
 - [ ] Autónomo con trayectorias: falta `GetRobotRelativeSpeeds()` en el chasis y pesar el
       robot para el `RobotConfig` de PathPlanner
-- [x] Dashboard del piloto: cuatro indicadores y layout de Elastic en el deploy
-      ([`docs/10-dashboard.md`](docs/10-dashboard.md))
+- [x] Dashboard y guía de controles: cuatro focos de partido, tira de diagnóstico y layout de
+      Elastic en el deploy ([`docs/10-dashboard.md`](docs/10-dashboard.md))
 - [ ] Fallback a robot-relative si se cae el giroscopio (y su foco en la pestaña de Partido)
 - [ ] Deadband y curva de respuesta ajustadas con el piloto real manejando
 

@@ -46,25 +46,8 @@
             }
           },
           {
-            "title": "VE EL TAG",
-            "x": 640.0,
-            "y": 0.0,
-            "width": 256.0,
-            "height": 384.0,
-            "type": "Boolean Box",
-            "properties": {
-              "topic": "/SmartDashboard/Piloto/VeTag",
-              "period": 0.06,
-              "data_type": "boolean",
-              "true_color": 4283215696,
-              "false_color": 4294198070,
-              "true_icon": "Checkmark",
-              "false_icon": "X"
-            }
-          },
-          {
             "title": "LANZADOR LISTO",
-            "x": 896.0,
+            "x": 640.0,
             "y": 0.0,
             "width": 256.0,
             "height": 384.0,
@@ -77,6 +60,71 @@
               "false_color": 4294198070,
               "true_icon": "Checkmark",
               "false_icon": "X"
+            }
+          },
+          {
+            "title": "TIRO LISTO",
+            "x": 896.0,
+            "y": 0.0,
+            "width": 384.0,
+            "height": 384.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/SmartDashboard/Tiro/Listo",
+              "period": 0.06,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "Checkmark",
+              "false_icon": "X"
+            }
+          },
+          {
+            "title": "ESTADO DEL TIRO",
+            "x": 0.0,
+            "y": 384.0,
+            "width": 768.0,
+            "height": 128.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/SmartDashboard/Tiro/Estado",
+              "period": 0.06,
+              "data_type": "string",
+              "show_submit_button": false
+            }
+          },
+          {
+            "title": "VE EL TAG",
+            "x": 768.0,
+            "y": 384.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/SmartDashboard/Piloto/VeTag",
+              "period": 0.06,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "Checkmark",
+              "false_icon": "X"
+            }
+          },
+          {
+            "title": "FALTA CALIBRAR",
+            "x": 1024.0,
+            "y": 384.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/SmartDashboard/Piloto/CalibracionPendiente",
+              "period": 0.1,
+              "data_type": "boolean",
+              "true_color": 4294942720,
+              "false_color": 4283215696,
+              "true_icon": "Exclamation Point",
+              "false_icon": "None"
             }
           }
         ]
@@ -362,6 +410,155 @@
               "true_icon": "None",
               "false_icon": "Exclamation Point"
             }
+          },
+          {
+            "title": "Tiro: distancia (m)",
+            "x": 0.0,
+            "y": 1024.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/SmartDashboard/Tiro/DistanciaMetros",
+              "period": 0.1,
+              "data_type": "double",
+              "show_submit_button": false
+            }
+          },
+          {
+            "title": "Tiro: hood (grados)",
+            "x": 256.0,
+            "y": 1024.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/SmartDashboard/Tiro/HoodGrados",
+              "period": 0.1,
+              "data_type": "double",
+              "show_submit_button": false
+            }
+          },
+          {
+            "title": "Tiro: lanzador (RPM)",
+            "x": 512.0,
+            "y": 1024.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/SmartDashboard/Tiro/LanzadorRPM",
+              "period": 0.1,
+              "data_type": "double",
+              "show_submit_button": false
+            }
+          },
+          {
+            "title": "Tiro: entrada (grados)",
+            "x": 768.0,
+            "y": 1024.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/SmartDashboard/Tiro/AnguloEntradaGrados",
+              "period": 0.1,
+              "data_type": "double",
+              "show_submit_button": false
+            }
+          },
+          {
+            "title": "Tiro: salida (m/s)",
+            "x": 1024.0,
+            "y": 1024.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/SmartDashboard/Tiro/SalidaMetrosPorSegundo",
+              "period": 0.1,
+              "data_type": "double",
+              "show_submit_button": false
+            }
+          },
+          {
+            "title": "Hood comandado (grados)",
+            "x": 0.0,
+            "y": 1280.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/SmartDashboard/Hood/AnguloComandadoGrados",
+              "period": 0.1,
+              "data_type": "double",
+              "show_submit_button": false
+            }
+          },
+          {
+            "title": "Hood: comando al servo",
+            "x": 256.0,
+            "y": 1280.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/SmartDashboard/Hood/ComandoServo",
+              "period": 0.1,
+              "data_type": "double",
+              "show_submit_button": false
+            }
+          },
+          {
+            "title": "Hood probablemente llego",
+            "x": 512.0,
+            "y": 1280.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/SmartDashboard/Hood/ProbablementeLlego",
+              "period": 0.1,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "None",
+              "false_icon": "None"
+            }
+          },
+          {
+            "title": "Torreta: pedido fuera de rango",
+            "x": 768.0,
+            "y": 1280.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/SmartDashboard/Torreta/PedidoFueraDeRango",
+              "period": 0.1,
+              "data_type": "boolean",
+              "true_color": 4294942720,
+              "false_color": 4283215696,
+              "true_icon": "Exclamation Point",
+              "false_icon": "None"
+            }
+          },
+          {
+            "title": "Vision: layout de tags cargado",
+            "x": 1024.0,
+            "y": 1280.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/SmartDashboard/Vision/LayoutCargado",
+              "period": 0.1,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "None",
+              "false_icon": "Exclamation Point"
+            }
           }
         ]
       }
@@ -537,6 +734,156 @@
               "topic": "/SmartDashboard/Calibracion/BackRightErrorGrados",
               "period": 0.2,
               "data_type": "double",
+              "show_submit_button": false
+            }
+          },
+          {
+            "title": "Offsets del swerve",
+            "x": 0.0,
+            "y": 768.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/SmartDashboard/Calibracion/OffsetsMedidos",
+              "period": 0.1,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "Checkmark",
+              "false_icon": "X"
+            }
+          },
+          {
+            "title": "Geometria del chasis",
+            "x": 256.0,
+            "y": 768.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/SmartDashboard/Drivetrain/GeometriaMedida",
+              "period": 0.1,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "Checkmark",
+              "false_icon": "X"
+            }
+          },
+          {
+            "title": "Relacion de traccion",
+            "x": 512.0,
+            "y": 768.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/SmartDashboard/Drivetrain/RelacionConfirmada",
+              "period": 0.1,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "Checkmark",
+              "false_icon": "X"
+            }
+          },
+          {
+            "title": "Torreta: offset",
+            "x": 768.0,
+            "y": 768.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/SmartDashboard/Torreta/OffsetMedido",
+              "period": 0.1,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "Checkmark",
+              "false_icon": "X"
+            }
+          },
+          {
+            "title": "Torreta: relacion",
+            "x": 1024.0,
+            "y": 768.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/SmartDashboard/Torreta/RelacionConfirmada",
+              "period": 0.1,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "Checkmark",
+              "false_icon": "X"
+            }
+          },
+          {
+            "title": "Camara: geometria",
+            "x": 0.0,
+            "y": 1024.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/SmartDashboard/Vision/GeometriaMedida",
+              "period": 0.1,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "Checkmark",
+              "false_icon": "X"
+            }
+          },
+          {
+            "title": "Hood: servo",
+            "x": 256.0,
+            "y": 1024.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/SmartDashboard/Hood/ServoCalibrado",
+              "period": 0.1,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "Checkmark",
+              "false_icon": "X"
+            }
+          },
+          {
+            "title": "Tiro: eficiencia",
+            "x": 512.0,
+            "y": 1024.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/SmartDashboard/Tiro/EficienciaCalibrada",
+              "period": 0.1,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "Checkmark",
+              "false_icon": "X"
+            }
+          },
+          {
+            "title": "Falta por medir",
+            "x": 768.0,
+            "y": 1024.0,
+            "width": 512.0,
+            "height": 256.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/SmartDashboard/Piloto/FaltaPorMedir",
+              "period": 0.2,
+              "data_type": "string",
               "show_submit_button": false
             }
           }
