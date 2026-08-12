@@ -19,34 +19,34 @@ para autónomo.
 
 ## Estado actual
 
-`GetAutonomousCommand()` devuelve `std::nullopt`. No hay autónomo todavía — es tuyo desde cero.
+**Decisión tomada: PathPlanner** (`2026.1.2`), instalado como vendordep. El porqué, con la
+comparación contra Choreo, está en [`docs/09-autonomo.md`](../09-autonomo.md) — que es
+también el documento del rol: rutinas, procedimiento de prueba y pendientes.
 
-## Lo primero que decides
+Hecho:
 
-**PathPlanner o Choreo.** No están instalados aún, así que la decisión está abierta:
+- [x] Vendordep de PathPlanner instalado
+- [x] `Salir de la linea` — avanza por tiempo, sin depender de la odometría
+- [x] `SendableChooser` en `Autonomo/Rutina`, se lee al empezar el autónomo
+- [x] `Cuadrado 2x2` y `Avanzar 2 m y regresar` para verificar odometría
+- [x] `GetAutonomousCommand()` devuelve la rutina seleccionada
+- [x] `./gradlew assemble` en verde (roboRIO y desktop)
 
-- **PathPlanner** (`v2026.1.2`): más fácil de arrancar, editor visual cómodo, event markers
-  integrados, mucha documentación. Es lo que usa la mayoría de los equipos.
-- **Choreo**: genera trayectorias óptimas resolviendo el problema físico completo. Más
-  rápido en la cancha, más difícil de ajustar a mano.
+## Pendientes, con su motivo
 
-Para un equipo que arranca con swerve, **PathPlanner** es la recomendación. Choreo se puede
-adoptar después sin rehacer los subsistemas.
+| Pendiente | Por qué no está hecho | De quién depende |
+|---|---|---|
+| Configurar el `AutoBuilder` de PathPlanner | `Drivetrain` no expone `GetRobotRelativeSpeeds()`, y `RobotConfig` pide masa, momento de inercia y COF de la rueda — eso sale de **pesar el robot**, no de inventarlo | Chasis (pedido enviado) + mecánica |
+| Rutinas que anoten | No hay comando de disparo que **termine**: `SpinUp` y `TrackAngle` corren para siempre, sirven para `WhileTrue` en teleop pero nunca ceden el turno dentro de una secuencia | Superestructura (pedido enviado) |
+| Ganancias reales de `constants::autos` | Nunca se ha corrido SysId. Las de hoy son supuestos conservadores, y corren encima de un lazo de velocidad cuyos `kDriveS`/`kDriveV` también son supuestos | Chasis |
+| Probar cualquier rutina en el robot | El código compila; nadie lo ha corrido. La primera prueba va **en bloques** | Nadie más — falta hacerlo |
 
-Sea cual sea, el `Drivetrain` ya expone lo que necesitan:
-- `GetPose()` y `ResetPose()`
-- `DriveRobotRelative(ChassisSpeeds)`
-- El pose estimator ya fusiona odometría con visión
+**Bloqueo duro que hay que repetir en voz alta:** los offsets de `constants::offsets` siguen
+en `0_tr`. Hasta que Chasis los mida, las rutinas en lazo cerrado van a donde sea y **no es
+culpa del autónomo**. La única que funciona sin calibrar es `Salir de la linea`.
 
-## Lo primero que te toca
-
-1. **Instalar el vendordep** que elijas.
-2. **Un autónomo que solo se mueva hacia adelante y se detenga.** Suena tonto; es el que
-   más partidos ha salvado. Hazlo antes que cualquier rutina compleja.
-3. **Un `SendableChooser`** en el dashboard para escoger rutina antes del partido.
-4. **Verificar que la odometría no se va.** Maneja un cuadrado de 2×2 m y regresa al inicio:
-   el error acumulado te dice si las relaciones de engranaje y el track width están bien.
-   Si el cuadrado sale torcido, el problema es de Chasis, no tuyo — repórtalo.
+Lo mismo con `mk4n::kDriveRatioConfirmada = false`: si los módulos no son L2+, toda
+distancia recorrida miente por un factor constante.
 
 ## Trampas
 

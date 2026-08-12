@@ -5,6 +5,26 @@ cómo se prueba y qué falta.
 
 ---
 
+## Antes de probar nada: tres cosas que no dependen de este código
+
+> **1. Los offsets de los encoders están en `0_tr`.** Hasta que Chasis los mida
+> ([`04-calibracion.md`](04-calibracion.md)), las tres rutinas en lazo cerrado van a ir a
+> donde sea, y **no va a ser culpa de la rutina**. La única que funciona sin calibrar es
+> `Salir de la linea`, porque anda por tiempo y no por pose.
+>
+> **2. `mk4n::kDriveRatioConfirmada = false`.** Nadie ha confirmado contra la factura de SDS
+> que los módulos sean L2+. Si son L1+ o L3+, toda la odometría miente por un factor
+> constante (5.9/7.13 o 5.9/5.36) y el robot va a recorrer distancias equivocadas aunque
+> el código esté perfecto.
+>
+> **3. Las ganancias de `constants::autos` son supuestos, no mediciones.** Nunca se ha
+> corrido SysId en este robot. Ver [Lo que falta](#lo-que-falta).
+
+Ninguna de las tres se arregla desde el autónomo. Si alguien prueba un auto y sale torcido,
+lo primero es descartar estas tres antes de tocar una ganancia.
+
+---
+
 ## La decisión: PathPlanner
 
 Entre **PathPlanner** y **Choreo**, arrancamos con PathPlanner (`2026.1.2`, ya instalado
@@ -159,7 +179,13 @@ no en secuencia. Cuando existan rutinas con lanzador, así se van a escribir.
    termine cuando el disparo se confirmó. Hoy `Turret` expone `SpinUp` y `GoToAngle`, pero
    no hay alimentador ni "dispara y espera". **Pedido a Superestructura.**
 3. **Caracterización con SysId** para tener kS/kV/kA reales. Sin eso, las ganancias de
-   arriba son un punto de partida razonable, no las buenas.
+   `constants::autos` son un punto de partida razonable, **no** las buenas — y encima
+   corren encima del lazo de velocidad de cada módulo, cuyos `kDriveS`/`kDriveV` también
+   son supuestos. Dos capas sin caracterizar, una sobre la otra.
+4. **Offsets de los encoders** (`constants::offsets`, todos en `0_tr`). Es de Chasis, pero
+   bloquea todo lo de aquí: sin eso, ninguna rutina en lazo cerrado significa nada.
+5. **Probar en el robot.** Nada de esto se ha corrido: el código compila para roboRIO y
+   para desktop, y ahí se acaba la evidencia. La primera prueba va en bloques.
 
 ---
 
