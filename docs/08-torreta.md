@@ -169,6 +169,19 @@ voltaje del chasis puede empezar a recortar. Ver
 
 ---
 
+## Qué dice el dashboard
+
+| Clave | Qué es |
+|---|---|
+| `Calibracion/TorretaRotaciones` | Lectura cruda del CANcoder. Es el número del paso 2 |
+| `Torreta/AnguloGrados` | Ángulo del mecanismo, ya con el offset aplicado |
+| `Torreta/OffsetMedido` | **False mientras nadie haya calibrado.** Se deduce solo de que `offsets::kTurret` siga en `0_tr` |
+| `Torreta/EncoderOK` | False si el TalonFX perdió al CANcoder. Con esto en false nada de arriba es real |
+| `Torreta/LimiteAdelante` · `LimiteAtras` | Cuál soft limit está frenando salida ahora mismo. Solo con el robot habilitado |
+| `Torreta/PedidoFueraDeRango` | El ángulo pedido quedó fuera de lo que la torreta alcanza y hubo que recortarlo |
+| `Torreta/RelacionConfirmada` | False mientras nadie confirme el 60:1 contra el mecanismo (paso 3) |
+| `Torreta/LanzadorRPM` · `LanzadorAmps` | Velocidad y corriente de supply del lanzador |
+
 ## Si algo no cuadra
 
 **`Calibracion/TorretaRotaciones` no cambia al mover la torreta a mano.** El CANcoder no

@@ -11,7 +11,7 @@
 // La parte de física es exacta. Lo que NO es exacto es la conversión de RPM del
 // volante a velocidad del proyectil, porque el proyectil resbala contra el
 // volante. Todo ese error vive concentrado en constants::shot::kTransferEfficiency,
-// que se calibra con tiros reales. Ver docs/07-tiro-balistico.md.
+// que se calibra con tiros reales. Ver docs/09-tiro-balistico.md.
 struct ShotSolution {
   bool feasible = false;
 

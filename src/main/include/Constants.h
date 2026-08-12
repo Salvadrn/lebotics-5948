@@ -29,6 +29,12 @@ inline constexpr double kDriveRatioL3Plus = 5.36;
 inline constexpr double kDriveGearRatio = kDriveRatioL2Plus;
 inline constexpr double kSteerGearRatio = 18.75;
 
+// SIN CONFIRMAR contra la factura de SDS. Si compraron L1+ o L3+ en vez de L2+,
+// toda la odometria miente por un factor constante: el robot cree que recorrio
+// 5.9/7.13 o 5.9/5.36 de lo que realmente recorrio. Sale en el dashboard como
+// Drivetrain/RelacionConfirmada. Ningun calculo lo usa.
+inline constexpr bool kDriveRatioConfirmada = false;
+
 inline constexpr units::meter_t kWheelRadius = 2_in;
 inline constexpr units::meter_t kWheelCircumference =
     units::meter_t{2.0 * std::numbers::pi * kWheelRadius.value()};
@@ -42,8 +48,14 @@ inline constexpr bool kSteerEncoderInverted = false;
 
 namespace drivetrain {
 
+// SUPUESTOS, nadie midio el chasis todavia. Se miden centro a centro de las
+// ruedas: kTrackWidth entre izquierda y derecha, kWheelBase entre frente y
+// atras. Si el chasis real no es cuadrado, el robot gira mas o menos de lo que
+// cree y la odometria se va de a poco. Sale en el dashboard como
+// Drivetrain/GeometriaMedida. Ningun calculo lo usa.
 inline constexpr units::meter_t kTrackWidth = 22.5_in;
 inline constexpr units::meter_t kWheelBase = 22.5_in;
+inline constexpr bool kChassisGeometryMedida = false;
 
 inline const units::meter_t kDriveBaseRadius = units::meter_t{
     std::hypot(kWheelBase.value() / 2.0, kTrackWidth.value() / 2.0)};
@@ -108,11 +120,27 @@ static_assert(kBackLeft >= 0_tr && kBackLeft < 1_tr,
 static_assert(kBackRight >= 0_tr && kBackRight < 1_tr,
               "offsets::kBackRight debe estar en [0, 1) rotaciones");
 
+// Los cuatro en cero es la condicion de fabrica: nadie ha calibrado. Se deduce
+// solo, asi que se prende sin que nadie tenga que acordarse de moverlo cuando
+// peguen los valores medidos. Sale en el dashboard como
+// Calibracion/OffsetsMedidos. Ningun calculo lo usa.
+//
+// Que cuatro offsets reales den exactamente 0.0000 es practicamente imposible,
+// asi que un falso "sin medir" no va a pasar.
+inline constexpr bool kOffsetsMedidos =
+    !(kFrontLeft == 0_tr && kFrontRight == 0_tr && kBackLeft == 0_tr &&
+      kBackRight == 0_tr);
+
 // Sin medir. El CANcoder **suma** este valor a su lectura, así que vale
 // -(lectura cruda con la torreta en su centro mecánico). Mientras esté en 0_tr,
 // los soft limits de la torreta protegen un rango arbitrario, no ±110° reales.
 // Procedimiento: docs/08-torreta.md
 inline constexpr units::turn_t kTurret = 0_tr;
+
+// Mismo truco que kOffsetsMedidos: se deduce solo. Que el offset real del imán
+// dé exactamente 0.0000 no va a pasar. Sale en el dashboard como
+// Torreta/OffsetMedido. Ningún cálculo lo usa.
+inline constexpr bool kTurretOffsetMedido = kTurret != 0_tr;
 
 }  // namespace offsets
 
@@ -175,6 +203,13 @@ namespace turret {
 
 inline constexpr double kAzimuthGearRatio = 60.0;
 inline constexpr double kShooterGearRatio = 1.0;
+
+// SIN CONFIRMAR contra el mecanismo real. Con el CANcoder en el eje de la
+// torreta esto NO afecta la posición ni los soft limits — solo el lazo interno
+// del Kraken y los perfiles de Motion Magic, así que un valor equivocado se
+// siente como una torreta que acelera raro, no como una que se pasa del tope.
+// Sale en el dashboard como Torreta/RelacionConfirmada. Ningún cálculo lo usa.
+inline constexpr bool kAzimuthRatioConfirmada = false;
 
 // Rango físico. Estos dos son los que se cargan como soft limits en el TalonFX.
 inline constexpr units::degree_t kMinAngle = -110_deg;
@@ -244,7 +279,7 @@ inline constexpr units::meter_t kFlywheelDiameter = 4_in;
 // velocidad tangencial del volante que de verdad se le transfiere al proyectil;
 // el resto se pierde en resbalamiento y compresión. La física de la parábola es
 // exacta, esto es lo único empírico. Se calibra con tiros reales — el
-// procedimiento está en docs/07-tiro-balistico.md.
+// procedimiento está en docs/09-tiro-balistico.md.
 inline constexpr double kTransferEfficiency = 0.55;
 
 inline constexpr units::revolutions_per_minute_t kMaxShooterSpeed = 5500_rpm;
@@ -269,51 +304,20 @@ inline constexpr units::meter_t kCameraHeight = 24_in;
 inline constexpr units::degree_t kCameraPitch = 25_deg;
 inline constexpr bool kCameraGeometryMedida = false;
 
-inline constexpr units::meter_t kTagHeightBaja = 21.75_in;
-inline constexpr units::meter_t kTagHeightMedia = 35.0_in;
-inline constexpr units::meter_t kTagHeightAlta = 44.25_in;
-
-constexpr std::optional<units::meter_t> TagHeight(int tagId) {
-  switch (tagId) {
-    case 13:
-    case 14:
-    case 15:
-    case 16:
-    case 29:
-    case 30:
-    case 31:
-    case 32:
-      return kTagHeightBaja;
-    case 1:
-    case 6:
-    case 7:
-    case 12:
-    case 17:
-    case 22:
-    case 23:
-    case 28:
-      return kTagHeightMedia;
-    case 2:
-    case 3:
-    case 4:
-    case 5:
-    case 8:
-    case 9:
-    case 10:
-    case 11:
-    case 18:
-    case 19:
-    case 20:
-    case 21:
-    case 24:
-    case 25:
-    case 26:
-    case 27:
-      return kTagHeightAlta;
-    default:
-      return std::nullopt;
-  }
-}
+// Aquí NO hay una tabla de alturas de tags, y es a propósito.
+//
+// La hubo: tres constantes con las alturas de Rebuilt 2026 (21.75", 35" y
+// 44.25") y un switch por ID. El problema es que una tabla escrita a mano
+// sobrevive al cambio de temporada sin quejarse: en enero, con el campo nuevo,
+// seguiría devolviendo alturas del año pasado con toda seguridad, y ahora que
+// util/ShotSolver consume esa altura, eso no es una distancia mal medida —
+// es un tiro que falla y nadie sabe por qué.
+//
+// Vision::TagHeight() las lee de frc::AprilTagFieldLayout::LoadField(
+// kDefaultField), que es el layout oficial que trae la versión de WPILib
+// instalada. Al subir el vendordep de la temporada nueva, las alturas se
+// actualizan solas. Si el layout no carga, no hay altura y no hay distancia:
+// el dashboard lo grita en Vision/LayoutCargado. Ver docs/07-vision-distancia.md.
 
 inline constexpr size_t kCalibrationSamples = 50;
 inline constexpr units::degree_t kCalibrationCenterTolerance = 3_deg;
@@ -353,6 +357,16 @@ inline constexpr int kDashboardSlowDivider = 5;
 
 namespace autos {
 
+// NINGUNA rutina del autonomo depende de una pose del campo: todas arrancan con
+// ResetPose({0,0,0}), asi que las distancias de aqui son relativas a donde
+// quedo el robot. No hay coordenadas de campo 2027 escondidas en estos numeros
+// ni hay que espejar nada para la alianza roja. Cuando entren trayectorias
+// absolutas de PathPlanner, eso cambia. Procedimiento: docs/09-autonomo.md
+//
+// Requisito duro: el autonomo en lazo cerrado NO sirve hasta que
+// constants::offsets tenga los offsets reales medidos. Con offsets en 0_tr el
+// robot va a donde sea. La rutina "Salir de la linea" es la unica que funciona
+// sin calibrar, porque anda por tiempo y no por pose.
 inline constexpr units::meters_per_second_t kLeaveLineSpeed = 1.2_mps;
 inline constexpr units::second_t kLeaveLineTime = 1.5_s;
 
@@ -362,6 +376,13 @@ inline constexpr units::radians_per_second_t kMaxAngularSpeed{3.0};
 inline constexpr units::radians_per_second_squared_t kMaxAngularAcceleration{
     6.0};
 
+// SIN CARACTERIZAR. Los cuatro son supuestos: un punto de partida conservador
+// para un swerve de este tamano, no ganancias medidas. Nunca se ha corrido
+// SysId en este robot y kDriveS/kDriveV de gains:: tambien son supuestos, asi
+// que el lazo de abajo corre encima de un lazo de velocidad que tampoco esta
+// caracterizado. Primera vez en piso: empezar con kMaxSpeed bajito.
+// Sintoma de que estan mal: sobrepasa y regresa (bajar kTranslationP) o tarda
+// una eternidad en cerrar los ultimos centimetros (subirlo).
 inline constexpr double kTranslationP = 3.0;
 inline constexpr double kTranslationD = 0.0;
 inline constexpr double kThetaP = 4.0;

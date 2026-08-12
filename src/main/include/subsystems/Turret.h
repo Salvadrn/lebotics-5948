@@ -50,6 +50,12 @@ class Turret : public frc2::SubsystemBase {
   // que se evalúan los soft limits deja de ser real y no protegen nada.
   bool IsAzimuthSensorHealthy();
 
+  // True si el último ángulo pedido cayó fuera del rango que la torreta puede
+  // alcanzar y hubo que recortarlo. Sin esto, un blanco que queda detrás del
+  // límite se ve igual que uno al que sí se está apuntando: la torreta se queda
+  // quieta en el tope y nadie sabe por qué el tiro nunca se pone listo.
+  bool WasLastRequestClamped() const { return m_lastRequestClamped; }
+
   frc2::CommandPtr GoToAngle(units::degree_t angle);
   frc2::CommandPtr TrackAngle(std::function<units::degree_t()> angleSupplier);
   frc2::CommandPtr SpinUp(units::revolutions_per_minute_t speed);
@@ -73,6 +79,8 @@ class Turret : public frc2::SubsystemBase {
   ctre::phoenix6::StatusSignal<bool> m_forwardSoftLimit;
   ctre::phoenix6::StatusSignal<bool> m_reverseSoftLimit;
   ctre::phoenix6::StatusSignal<bool> m_remoteSensorInvalid;
+
+  bool m_lastRequestClamped = false;
 
   ctre::phoenix6::controls::MotionMagicVoltage m_azimuthRequest{0_tr};
   ctre::phoenix6::controls::VelocityVoltage m_shooterRequest{0_tps};

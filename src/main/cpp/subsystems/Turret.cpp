@@ -197,6 +197,19 @@ void Turret::PublishTelemetry() {
   frc::SmartDashboard::PutBoolean("Torreta/LimiteAtras",
                                   IsReverseSoftLimitTripped());
   frc::SmartDashboard::PutBoolean("Torreta/EncoderOK", IsAzimuthSensorHealthy());
+
+  // Mientras esto esté en false, los soft limits están anclados a un cero
+  // arbitrario y no protegen los ±110° reales. Es lo más peligroso que queda
+  // pendiente en la torreta.
+  frc::SmartDashboard::PutBoolean("Torreta/OffsetMedido",
+                                  constants::offsets::kTurretOffsetMedido);
+  frc::SmartDashboard::PutBoolean("Torreta/RelacionConfirmada",
+                                  constants::turret::kAzimuthRatioConfirmada);
+
+  // Prende cuando el blanco quedó detrás del límite de la torreta. Sin esto,
+  // "no llega" y "está apuntando" se ven idénticos desde el dashboard.
+  frc::SmartDashboard::PutBoolean("Torreta/PedidoFueraDeRango",
+                                  WasLastRequestClamped());
 }
 
 units::turn_t Turret::GetRawCancoderPosition() {
@@ -225,8 +238,9 @@ bool Turret::IsWithinRange(units::degree_t angle) const {
 }
 
 void Turret::SetAngle(units::degree_t angle) {
-  m_azimuth.SetControl(
-      m_azimuthRequest.WithPosition(ClampToCommandRange(angle)));
+  const units::degree_t clamped = ClampToCommandRange(angle);
+  m_lastRequestClamped = clamped != angle;
+  m_azimuth.SetControl(m_azimuthRequest.WithPosition(clamped));
 }
 
 void Turret::SetShooterSpeed(units::revolutions_per_minute_t speed) {

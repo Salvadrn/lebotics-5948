@@ -4,6 +4,16 @@ El robot calcula solo con qué ángulo y a qué velocidad lanzar, a partir de la
 que mide la Limelight. Este documento explica cómo funciona y —más importante— **cómo
 calibrarlo**, porque sin calibrar no le va a pegar a nada.
 
+> ## Antes de usar el apuntado automático
+>
+> El bumper izquierdo no solo mueve el hood: le manda un ángulo **a la torreta en lazo
+> cerrado**. Mientras `constants::offsets::kTurret` siga en `0_tr`, los soft limits de la
+> torreta están anclados a un cero arbitrario y **no protegen los ±110° reales** — apretar
+> ese botón es darle potencia a una torreta sin calibrar.
+>
+> Hagan primero [`docs/08-torreta.md`](08-torreta.md) completo. En el dashboard,
+> `Torreta/OffsetMedido` en true es la señal de que ya se puede.
+
 ## Las dos mitades del problema
 
 El cálculo tiene dos partes, y solo una de ellas es confiable de entrada:
@@ -180,6 +190,14 @@ eficiencia.
 | `El hood no sube lo suficiente` | Con el ángulo máximo el proyectil ya viene bajando antes de llegar | Acercarse, o ampliar el rango del hood |
 | `Muy lejos: falta lanzador` | Haría falta más RPM de las que da el Kraken | Acercarse |
 | `Muy cerca: sobra lanzador` | Menos RPM del mínimo útil | Retroceder |
+
+Hay un caso que **no** sale en `Tiro/Estado`, porque no es el modelo balístico el que falla:
+el blanco está a más de 110° de la torreta. El cálculo resuelve bien, el hood y el lanzador
+obedecen, y la torreta se queda pegada en su tope sin llegar nunca a apuntar — así que
+`Tiro/Listo` jamás se prende y no es obvio por qué.
+
+Eso sale en **`Torreta/PedidoFueraDeRango`**. Si está en true, hay que girar el chasis: no
+es un problema de tiro.
 
 ## Lo que este modelo no incluye
 
