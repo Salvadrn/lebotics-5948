@@ -2,11 +2,14 @@
 
 #include <frc2/command/CommandScheduler.h>
 
+#include "util/SystemMonitor.h"
+
 Robot::Robot() {}
 
 void Robot::RobotPeriodic() {
   frc2::CommandScheduler::GetInstance().Run();
   m_container.UpdateVisionFusion();
+  sysmon::Publish();
 }
 
 void Robot::DisabledInit() {}

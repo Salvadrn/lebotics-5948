@@ -57,6 +57,19 @@ Drivetrain::Drivetrain()
       m_strafeLimiter{constants::drivetrain::kMaxAcceleration},
       m_rotateLimiter{constants::drivetrain::kMaxAngularAcceleration} {
   SetName("Drivetrain");
+
+  // Sin esto el estimator se queda con el default de WPILib, {0.9, 0.9, 0.9}, y
+  // las constantes de constants::vision no las usa nadie. La que importa es la
+  // tercera: en 0.9 rad la vision corrige el heading casi tanto como la
+  // odometria, y no es lo que queremos — el navX es mucho mejor en angulo que
+  // un botpose de Limelight a distancia. kVisionStdDevTheta es enorme a
+  // proposito para que la vision mueva x/y y practicamente no toque theta.
+  //
+  // Solo afecta GetPose(), que es lo que consume el autonomo. El teleop
+  // field-relative usa GetHeading() (navX directo) y nunca estuvo expuesto.
+  m_poseEstimator.SetVisionMeasurementStdDevs(
+      {constants::vision::kVisionStdDevX, constants::vision::kVisionStdDevY,
+       constants::vision::kVisionStdDevTheta});
 }
 
 wpi::array<frc::SwerveModulePosition, 4> Drivetrain::GetModulePositions() {
