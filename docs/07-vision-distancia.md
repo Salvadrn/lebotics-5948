@@ -110,6 +110,20 @@ Anótenlo con dos decimales en pulgadas. Un error de **1 pulgada** aquí se trad
 Es el error más benigno de los tres, porque crece de forma lineal y proporcional. Aun así,
 midan bien: es gratis.
 
+### Escríbanlo en el dashboard antes de seguir
+
+**Esto no es opcional.** Escriban la altura que acaban de medir en
+**`Vision/Calib/AlturaCamaraPulgadas`**.
+
+El pitch del paso 2 se despeja *a partir de* la altura de la cámara. Si el robot sigue
+usando la altura que trae `Constants.h` (24 in, supuesta) mientras la real es otra, el pitch
+que les va a dar el dashboard hereda ese error — y no es chico: **1.5 in de diferencia entre
+la altura supuesta y la real mueve el pitch resuelto casi 1°**, que a 4 m son casi 50 cm.
+
+Esta llave existe justamente para que no tengan que editar `Constants.h` y volver a
+desplegar en medio de la sesión de medición. Arranca con el valor de la constante, así que
+si no la tocan, no cambia nada — pero entonces el paso 2 les miente.
+
 ## Paso 2 — El pitch no se mide, se resuelve
 
 La idea: si conocemos la altura de la cámara, la altura del tag y la distancia real medida
@@ -122,9 +136,15 @@ pitch = atan(Δh / distancia_real) − ty
 El código ya calcula esto solo. En el dashboard, mientras el robot está encendido y viendo
 un tag:
 
+0. Confirmen que **`Vision/Calib/AlturaCamaraPulgadas`** tiene la altura que midieron en el
+   paso 1, no los 24 in de fábrica.
 1. En **`Vision/Calib/DistanciaRealMetros`** escriban la distancia que midieron con la cinta.
 2. Esperen a que **`Vision/Calib/Muestras`** llegue a 50 (un segundo).
 3. Lean **`Vision/Calib/PitchImplicadoGrados`**. Ese es el pitch de su cámara.
+
+Si alguna de esas llaves marca **`-1`**, es que todavía no hay dato: no hay tag a la vista,
+no escribieron la distancia, o el tag no está en el layout. `-1` significa "sin dato", nunca
+es una lectura válida.
 
 El promedio de 50 muestras existe porque `ty` tiembla. Si
 **`Vision/Calib/TyDesviacionGrados`** pasa de 0.3°, algo vibra o la exposición está muy
@@ -154,7 +174,14 @@ bumper, están metiendo un error constante del tamaño de lo que sobresale el ro
 - El tag **centrado horizontalmente**: `Vision/Calib/Centrado` debe estar en `true`
   (es `|tx| < 3°`). Un tag en la esquina del cuadro mete error en `ty`.
 - El robot **cuadrado** al tag, no en diagonal.
-- El mismo tag en las cuatro estaciones, y de la fila que van a usar en partido.
+- **El mismo tag en las cuatro estaciones**, y que no sea de la fila baja.
+
+> **Cuidado con qué tag eligen.** Si `Vision/DistanciaMetros` marca `-1` con el tag a la
+> vista, escogieron uno cuya altura queda demasiado cerca de la del lente y el código
+> descarta la distancia a propósito — con la cámara a 24 in eso les pasa con los tags de
+> 21.75 in. Está explicado en *La fila baja de tags no sirve para trigonometría*, más
+> abajo. Cambien a un tag de la fila alta y sigan; calibrar contra la fila baja no sirve
+> ni aunque el número salga.
 
 Anoten, para cada estación, la distancia de la cinta y el `Vision/Calib/TyPromedioGrados`:
 
@@ -320,14 +347,20 @@ el orden del arreglo antes de confiar en la fusión de pose.
 | `Vision/LayoutCargado` | El layout oficial de AprilTags cargó. En `false` no hay distancia |
 | `Vision/LayoutTags` · `Vision/LayoutLargoMetros` | Cuántos tags y qué largo tiene el campo cargado — para confirmar de un vistazo que es el campo de la temporada en curso |
 | `Vision/Calib/DistanciaRealMetros` | **Entrada**: lo que dice la cinta |
+| `Vision/Calib/AlturaCamaraPulgadas` | **Entrada**: la altura del lente que midieron en el paso 1. Arranca con el valor de `kCameraHeight` |
 | `Vision/Calib/Muestras` | Cuántas muestras lleva el promedio (llega a 50) |
 | `Vision/Calib/TyPromedioGrados` | `ty` promediado |
 | `Vision/Calib/TyDesviacionGrados` | Qué tanto tiembla `ty` |
 | `Vision/Calib/PitchImplicadoGrados` | **El pitch de su cámara** |
-| `Vision/Calib/AlturaImplicadaPulgadas` | La altura que explicaría la lectura con el pitch actual |
+| `Vision/Calib/AlturaImplicadaPulgadas` | La altura **de la cámara** despejada al revés: la que explicaría este `ty` si el `kCameraPitch` desplegado fuera correcto. Solo sirve *después* de escribir el pitch resuelto — antes de eso es un número que arrastra el error del pitch supuesto |
 | `Vision/Calib/ErrorMetros` | Distancia calculada − distancia real |
-| `Vision/Calib/Centrado` | `|tx| < 3°` |
+| `Vision/Calib/Centrado` | `\|tx\| < 3°` |
 | `Vision/Latencia/BotposeMs` · `Vision/Latencia/TlMasClMs` | Para el chequeo de latencia |
+
+**`-1` siempre quiere decir "sin dato", nunca una lectura.** Todas estas llaves se publican
+en cada ciclo, con o sin tag: si la cámara pierde el blanco, se van a `-1` en vez de
+quedarse congeladas con el último valor bueno. Un número viejo que parece vivo es la forma
+más fácil de calibrar contra nada.
 
 El promedio se reinicia solo cuando cambian `DistanciaRealMetros` o cuando la cámara cambia
 a **otro** tag. No hay que apretar nada entre estaciones, y perder el tag un par de cuadros

@@ -96,7 +96,20 @@ está escrito paso a paso. Lo único que falta es estar frente al robot.
 
 ## Cómo verificas
 
-- `./gradlew build` en verde
+- **`./gradlew assemble --offline` en verde** — no `build`: en un proyecto C++ de WPILib la
+  tarea `test` es ambigua y tumba el build por algo que no tiene que ver con tu código.
+  En esta Mac hace falta el JDK de Homebrew, que ya está instalado:
+
+  ```bash
+  JAVA_HOME=/opt/homebrew/opt/openjdk@17 ./gradlew assemble --offline
+  ```
+
+  Si falla el enlace con `undefined reference` a algo que **no** tocaste, casi seguro no es
+  código: seis sesiones compartimos el mismo `build/` y el estado incremental de Gradle se
+  corrompe. Ya pasó con `ShotSolver.o`, que existía para tres variantes y faltaba en
+  `linuxathena/release` con la tarea marcada `UP-TO-DATE`. Se arregla forzando esa tarea:
+  `./gradlew <tareaDeCompilación> --offline --rerun`. Tocar el archivo no sirve — Gradle
+  compara contenido, no fecha.
 - Tabla de distancia medida vs distancia real, con cinta métrica
 - El pose estimator no debe "saltar" cuando el robot está quieto viendo un tag
 
@@ -106,3 +119,11 @@ está escrito paso a paso. Lo único que falta es estar frente al robot.
 `distance` son `std::optional`. Superestructura sigue recibiendo `tx` para apuntar la
 torreta aunque la distancia se descarte por geometría o por lejanía — antes, un tag a más
 de `kMaxTrustedDistance` dejaba a la torreta sin ángulo aunque lo estuviera viendo perfecto.
+
+`GetTarget()` devuelve el **snapshot que tomó `Periodic()` en este ciclo**, no una lectura
+nueva de NetworkTables. Es a propósito: `AutoAimCommand` lo llama en su lazo, y si cada
+llamada releyera la cámara, el número con el que se resuelve el tiro podría no ser el que
+salió en el dashboard ese ciclo. Así, lo que ves en `Vision/DistanciaMetros` **es** lo que
+usó el robot para tirar — que es lo único que sirve cuando hay que explicar un tiro fallado.
+El scheduler de WPILib corre los `Periodic()` de los subsistemas antes que los comandos, así
+que el snapshot siempre es del ciclo en curso.

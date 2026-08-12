@@ -15,6 +15,8 @@ namespace {
 constexpr int kBotposeLatencyIndex = 6;
 constexpr size_t kBotposeMinSize = 7;
 constexpr char kCalibDistanceKey[] = "Vision/Calib/DistanciaRealMetros";
+constexpr char kCalibHeightKey[] = "Vision/Calib/AlturaCamaraPulgadas";
+constexpr double kSinDato = -1.0;
 }  // namespace
 
 Vision::Vision()
@@ -22,13 +24,30 @@ Vision::Vision()
           constants::vision::kLimelightName)} {
   SetName("Vision");
   frc::SmartDashboard::SetDefaultNumber(kCalibDistanceKey, 0.0);
+  frc::SmartDashboard::SetDefaultNumber(
+      kCalibHeightKey,
+      units::inch_t{constants::vision::kCameraHeight}.value());
 
   try {
     m_fieldLayout = frc::AprilTagFieldLayout::LoadField(
         frc::AprilTagField::kDefaultField);
+    m_layoutTagCount = m_fieldLayout->GetTags().size();
   } catch (...) {
     m_fieldLayout = std::nullopt;
+    m_layoutTagCount = 0;
   }
+}
+
+units::meter_t Vision::CalibrationCameraHeight() const {
+  const double inches = frc::SmartDashboard::GetNumber(
+      kCalibHeightKey,
+      units::inch_t{constants::vision::kCameraHeight}.value());
+
+  if (inches <= 0.0) {
+    return constants::vision::kCameraHeight;
+  }
+
+  return units::inch_t{inches};
 }
 
 std::optional<units::meter_t> Vision::TagHeight(int tagId) const {
@@ -45,7 +64,7 @@ std::optional<units::meter_t> Vision::TagHeight(int tagId) const {
 }
 
 void Vision::Periodic() {
-  m_lastTarget = GetTarget();
+  m_lastTarget = ReadTarget();
   UpdateCalibration();
   PublishTelemetry();
 }
@@ -56,29 +75,29 @@ void Vision::PublishTelemetry() {
                                   constants::vision::kCameraGeometryMedida);
   frc::SmartDashboard::PutBoolean("Vision/LayoutCargado",
                                   m_fieldLayout.has_value());
-  frc::SmartDashboard::PutNumber(
-      "Vision/LayoutTags",
-      m_fieldLayout ? static_cast<double>(m_fieldLayout->GetTags().size())
-                    : 0.0);
+  frc::SmartDashboard::PutNumber("Vision/LayoutTags",
+                                 static_cast<double>(m_layoutTagCount));
   frc::SmartDashboard::PutNumber(
       "Vision/LayoutLargoMetros",
       m_fieldLayout ? m_fieldLayout->GetFieldLength().value() : 0.0);
 
-  if (m_lastTarget) {
-    frc::SmartDashboard::PutNumber("Vision/TagID", m_lastTarget->tagId);
-    frc::SmartDashboard::PutNumber("Vision/OffsetGrados",
-                                   m_lastTarget->horizontalOffset.value());
-    frc::SmartDashboard::PutNumber("Vision/TyGrados",
-                                   m_lastTarget->verticalOffset.value());
-    frc::SmartDashboard::PutNumber(
-        "Vision/AlturaTagPulgadas",
-        m_lastTarget->tagHeight
-            ? units::inch_t{*m_lastTarget->tagHeight}.value()
-            : -1.0);
-    frc::SmartDashboard::PutNumber(
-        "Vision/DistanciaMetros",
-        m_lastTarget->distance ? m_lastTarget->distance->value() : -1.0);
-  }
+  frc::SmartDashboard::PutNumber(
+      "Vision/TagID", m_lastTarget ? m_lastTarget->tagId : kSinDato);
+  frc::SmartDashboard::PutNumber(
+      "Vision/OffsetGrados",
+      m_lastTarget ? m_lastTarget->horizontalOffset.value() : kSinDato);
+  frc::SmartDashboard::PutNumber(
+      "Vision/TyGrados",
+      m_lastTarget ? m_lastTarget->verticalOffset.value() : kSinDato);
+  frc::SmartDashboard::PutNumber(
+      "Vision/AlturaTagPulgadas",
+      m_lastTarget && m_lastTarget->tagHeight
+          ? units::inch_t{*m_lastTarget->tagHeight}.value()
+          : kSinDato);
+  frc::SmartDashboard::PutNumber(
+      "Vision/DistanciaMetros",
+      m_lastTarget && m_lastTarget->distance ? m_lastTarget->distance->value()
+                                             : kSinDato);
 
   const auto botposeLatency = GetBotposeLatency();
   const auto pipelineLatency = GetPipelineLatency();
@@ -120,6 +139,14 @@ void Vision::UpdateCalibration() {
                                  static_cast<double>(m_sampleCount));
 
   if (m_sampleCount == 0) {
+    frc::SmartDashboard::PutNumber("Vision/Calib/TyPromedioGrados", kSinDato);
+    frc::SmartDashboard::PutNumber("Vision/Calib/TyDesviacionGrados", kSinDato);
+    frc::SmartDashboard::PutBoolean("Vision/Calib/Centrado", false);
+    frc::SmartDashboard::PutNumber("Vision/Calib/PitchImplicadoGrados",
+                                   kSinDato);
+    frc::SmartDashboard::PutNumber("Vision/Calib/AlturaImplicadaPulgadas",
+                                   kSinDato);
+    frc::SmartDashboard::PutNumber("Vision/Calib/ErrorMetros", kSinDato);
     return;
   }
 
@@ -144,11 +171,16 @@ void Vision::UpdateCalibration() {
                           constants::vision::kCalibrationCenterTolerance);
 
   if (!m_lastTarget || !m_lastTarget->tagHeight || realDistance <= 0.0) {
+    frc::SmartDashboard::PutNumber("Vision/Calib/PitchImplicadoGrados",
+                                   kSinDato);
+    frc::SmartDashboard::PutNumber("Vision/Calib/AlturaImplicadaPulgadas",
+                                   kSinDato);
+    frc::SmartDashboard::PutNumber("Vision/Calib/ErrorMetros", kSinDato);
     return;
   }
 
-  const units::meter_t heightDelta =
-      *m_lastTarget->tagHeight - constants::vision::kCameraHeight;
+  const units::meter_t cameraHeight = CalibrationCameraHeight();
+  const units::meter_t heightDelta = *m_lastTarget->tagHeight - cameraHeight;
   const units::degree_t meanTy{mean};
 
   const units::degree_t impliedPitch =
@@ -165,11 +197,10 @@ void Vision::UpdateCalibration() {
   frc::SmartDashboard::PutNumber("Vision/Calib/AlturaImplicadaPulgadas",
                                  units::inch_t{impliedHeight}.value());
 
-  if (m_lastTarget->distance) {
-    frc::SmartDashboard::PutNumber(
-        "Vision/Calib/ErrorMetros",
-        m_lastTarget->distance->value() - realDistance);
-  }
+  frc::SmartDashboard::PutNumber(
+      "Vision/Calib/ErrorMetros",
+      m_lastTarget->distance ? m_lastTarget->distance->value() - realDistance
+                             : kSinDato);
 }
 
 bool Vision::HasTarget() {
@@ -177,6 +208,10 @@ bool Vision::HasTarget() {
 }
 
 std::optional<VisionTarget> Vision::GetTarget() {
+  return m_lastTarget;
+}
+
+std::optional<VisionTarget> Vision::ReadTarget() {
   if (!HasTarget()) {
     return std::nullopt;
   }

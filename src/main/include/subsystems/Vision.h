@@ -51,8 +51,11 @@ class Vision : public frc2::SubsystemBase {
  private:
   void PublishTelemetry();
   void UpdateCalibration();
+  std::optional<VisionTarget> ReadTarget();
+  units::meter_t CalibrationCameraHeight() const;
 
   std::optional<frc::AprilTagFieldLayout> m_fieldLayout;
+  std::size_t m_layoutTagCount = 0;
   std::shared_ptr<nt::NetworkTable> m_table;
   std::optional<VisionTarget> m_lastTarget;
 
