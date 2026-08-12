@@ -149,6 +149,18 @@ void Drivetrain::PublishCalibrationTelemetry() {
 
   frc::SmartDashboard::PutBoolean("Calibracion/TodoAlineado", allAligned);
 
+  // Tres cosas que el codigo asume y nadie ha verificado contra el robot real.
+  // No cambian ningun calculo: estan para que el equipo vea en pits que siguen
+  // pendientes en vez de descubrirlo cuando el robot maneje chueco.
+  frc::SmartDashboard::PutBoolean("Calibracion/OffsetsMedidos",
+                                  constants::offsets::kOffsetsMedidos);
+  frc::SmartDashboard::PutBoolean(
+      "Drivetrain/GeometriaMedida",
+      constants::drivetrain::kChassisGeometryMedida);
+  frc::SmartDashboard::PutBoolean(
+      "Drivetrain/RelacionConfirmada",
+      constants::mk4n::kDriveRatioConfirmada);
+
   // Bloque listo para pegar en Constants.h. Copiarlo a mano de cuatro numeros
   // sueltos es de donde salen los errores de transcripcion.
   frc::SmartDashboard::PutString(

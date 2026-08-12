@@ -65,19 +65,31 @@ Estas ya nos costaron tiempo. No las vuelvas a pisar:
   `GetYaw()` para odometría — esos son CW positivo y te invierten el field-relative.
 - El vendordep de navX2 es **Studica**, no *StudicaLib* (ese es solo para NavX3-CAN).
 
-## Lo primero que te toca
+## Pendientes abiertos
 
-1. **Calibrar los offsets absolutos.** Están todos en `0_tr` y hasta que no se midan, las
-   ruedas apuntan a cualquier lado. Procedimiento en `docs/04-calibracion.md`.
-2. **Caracterizar la tracción con SysId** para obtener kS/kV/kA reales. Los valores actuales
-   son estimaciones razonables, no medidas.
-3. **Verificar la relación de engranaje.** El código asume **L2+ (5.9:1)**. Si compraron
-   L1+ o L3+, cámbialo en `constants::mk4n::kDriveGearRatio` o toda la odometría miente.
-4. **Medir track width y wheel base reales.** Están en 22.5" como supuesto.
+Los cuatro necesitan el robot físico enfrente. **Ninguno se puede cerrar desde la
+computadora, y ninguno debe cerrarse inventando el número** — un valor plausible pero falso
+es peor que un cero honesto, porque el cero se ve en el dashboard y el número inventado no.
+
+Cada uno tiene su semáforo en el dashboard para que no se olviden.
+
+| Pendiente | Semáforo | Qué falta |
+|---|---|---|
+| **Offsets absolutos** | `Calibracion/OffsetsMedidos` | Los cuatro siguen en `0_tr`. Hasta medirlos, cada rueda apunta a donde quedó el imán al armar el módulo. El procedimiento y toda la telemetría ya están listos: `docs/04-calibracion.md`, ~20 min con el robot en bloques. Es lo que bloquea todo lo demás. |
+| **Track width y wheel base** | `Drivetrain/GeometriaMedida` | `22.5_in` los dos, supuestos. Se miden centro a centro de las ruedas con una cinta. Si el chasis real no es cuadrado, el robot gira distinto de lo que cree y la odometría se va de a poco. |
+| **Relación de engranaje** | `Drivetrain/RelacionConfirmada` | El código asume **L2+ (5.9:1)**. Nadie lo ha confirmado contra la factura de SDS. Si compraron L1+ o L3+, `constants::mk4n::kDriveGearRatio` está mal y toda la odometría miente por un factor constante. Se confirma leyendo la factura, no el robot. |
+| **kS/kV/kA de tracción** | — | `constants::gains::kDriveS/V/A` son estimaciones razonables, no medidas. Se sacan caracterizando con SysId. Sin esto el robot maneja, nada más que el feedforward no es el suyo. |
+
+Los tres semáforos son `constexpr bool` en `Constants.h` que no entran en ningún cálculo:
+existen solo para que se vea en pits qué sigue sin verificar. Los de geometría y relación se
+mueven a mano al medir; `OffsetsMedidos` se deduce solo de que los cuatro offsets sigan en
+cero, así que se prende sin que nadie tenga que acordarse.
 
 ## Cómo verificas
 
 Nunca digas que algo funciona sin:
-- `./gradlew build` en verde
+- `./gradlew assemble` en verde — **no** uses `./gradlew build -x test`: en un proyecto C++
+  de WPILib `test` es ambiguo entre `testExternalNativeDebug` y `testExternalNativeRelease`,
+  y el build falla por eso y no por tu código.
 - Robot **sobre bloques**, ruedas en el aire, antes de cualquier prueba nueva
 - Revisar el Driver Station Log Viewer buscando brownouts después de manejar

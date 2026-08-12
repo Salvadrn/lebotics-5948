@@ -139,6 +139,13 @@ Por cada módulo (`FrontLeft`, `FrontRight`, `BackLeft`, `BackRight`), bajo `Cal
 | `<Módulo>EncoderSeMovio` | `true` una vez que ese encoder se movió desde que encendió el robot. |
 | `Calibracion/TodoAlineado` | `true` si los cuatro `Alineada` están en `true`. |
 | `Calibracion/CodigoParaPegar` | Las cuatro líneas de `offsets` listas para copiar. |
+| `Calibracion/OffsetsMedidos` | `false` mientras los cuatro offsets sigan en `0_tr`. Se prende solo al pegar los valores medidos. |
+| `Drivetrain/GeometriaMedida` | `false` mientras `kTrackWidth`/`kWheelBase` sigan siendo los 22.5 in supuestos. |
+| `Drivetrain/RelacionConfirmada` | `false` mientras nadie confirme la relación de engranaje contra la factura de SDS. |
+
+Los últimos tres no los usa ningún cálculo: son semáforos de pits. Un robot con
+`OffsetsMedidos` en `false` maneja mal por definición, y es mejor verlo en el dashboard
+antes de la primera práctica que deducirlo en la cancha.
 
 Se publica a 5 Hz, no a 50, para no gastar CPU del roboRIO 1 ni ancho de banda de
 NetworkTables durante un match. Los números se ven fluidos igual.
