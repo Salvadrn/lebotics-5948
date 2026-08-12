@@ -60,6 +60,7 @@ que el breaker abra, y entonces el breaker no está protegiendo nada.
 | baja corriente | Radio de FRC | **10 A** | — |
 | baja corriente | Limelight | **10 A** | — |
 | — | **navX2-MXP** | **NINGUNO** | — |
+| — | **Servo del hood** | **ver §9** | — |
 
 **El navX no lleva breaker y eso confunde a todo el mundo.** Se enchufa en el puerto MXP
 del roboRIO y se alimenta de ahí. No tiene cable de potencia propio. Si te encuentras
@@ -230,8 +231,10 @@ mayor corriente de todo el partido.** Los cuatro motores de tracción empujan co
 gravedad al mismo tiempo, y si además giras, los cuatro de giro trabajan a la vez.
 
 De `05-corriente-y-brownout.md`: con 0.018 Ω de resistencia interna, 250 A de demanda
-tiran el voltaje de 12.6 a 8.1 V. El roboRIO 1 hace brownout **cerca de 6.8 V** — menos
-margen que el roboRIO 2, y por eso importa cuál tienes.
+tiran el voltaje de 12.6 a 8.1 V. El roboRIO 1 apaga las salidas en **6.3 V** (fijo), y
+antes de eso, en **6.8 V**, el riel de 6 V de los puertos PWM ya empezó a caer — ahí es
+donde el servo del hood se degrada sin avisar. Los dos umbrales están en
+[`05-corriente-y-brownout.md`](05-corriente-y-brownout.md).
 
 Del lado del cableado, tres cosas ayudan y ninguna es el software:
 
@@ -255,6 +258,83 @@ que el cobre desperdicia.
 
 ---
 
+## 9 · El servo del hood — el único que no sale del PDH
+
+El hood del lanzador lleva un **servo por PWM en el canal 0 del roboRIO**
+(`constants::hood::kServoPwmChannel`). Es el único actuador del robot que **no** pasa por
+el PDH, y por eso se olvida al revisar el tablero: no tiene canal, no tiene breaker y no
+aparece en ninguna tabla de arriba.
+
+```
+roboRIO ── puerto PWM 0 ──┬── señal (5 V)
+                          ├── potencia (riel de 6 V del roboRIO)
+                          └── tierra
+```
+
+### El riel de 6 V tiene 2.2 A y se comparten
+
+El roboRIO entrega **6 V con un máximo de 2.2 A en total** (unos 12.4 W) para **todos** los
+puertos PWM juntos, no por puerto. Ahora mismo el robot usa un solo servo, así que los
+2.2 A son para él — pero es un techo bajo y conviene saber dónde está.
+
+**Un servo grande de hobby con carga puede pedir de 1.5 a 2.5 A en atasco.** O sea que un
+solo servo mal dimensionado se come el riel completo. Y el hood **no es un servo libre**:
+sostiene el ángulo contra el peso del mecanismo, así que está cargado todo el partido, no
+solo cuando se mueve.
+
+### Por qué esto se conecta con el brownout
+
+Es la parte que hay que entender y no es obvia:
+
+| Voltaje del bus | Qué le pasa al servo |
+|---|---|
+| arriba de 6.8 V | normal |
+| **por debajo de 6.8 V** | el riel de 6 V **empieza a caer** — el servo pierde fuerza y vibra |
+| por debajo de 6.3 V | brownout: **las salidas PWM se apagan** y el hood queda suelto |
+
+El servo del hood **empieza a fallar medio volt antes de que el robot se apague**, y como
+es **lazo abierto —no tiene encoder—** el código no puede notarlo: `Hood/ComandoServo` va a
+seguir reportando el ángulo que se pidió, no el que hay. Un tiro que se va largo después de
+una subida demandante puede ser esto y parecer un problema de puntería.
+
+Por eso el piso de la guardia de voltaje está en 7.5 V y no en 6.5: **protege el riel de
+los PWM, no al roboRIO**.
+
+### Cuándo hace falta un Servo Power Module
+
+Si al montarlo el servo se calienta, vibra, o el hood se cae bajo carga, el problema es el
+riel y no el software. La salida estándar es el **REV Servo Power Module (REV-11-1144)**:
+
+| | Riel del roboRIO | REV Servo Power Module |
+|---|---|---|
+| Voltaje | 6 V | 6 V |
+| Corriente | **2.2 A en total** | **3 A por canal**, 15 A en total |
+| Canales | todos los PWM comparten | 6 |
+| De dónde come | del propio roboRIO | de un canal del PDH, con su breaker |
+
+El SPM se alimenta de 12 V desde el PDH y **saca la carga del servo del roboRIO**, que es
+justo lo que quieres en un robot que ya anda cerca del brownout. La señal PWM sigue
+saliendo del roboRIO; lo único que cambia es de dónde viene la potencia.
+
+### Si resulta ser un actuador lineal Actuonix
+
+`09-tiro-balistico.md` documenta que la salida, si el servo no tiene torque para el hood,
+es un **actuador lineal tipo Actuonix**. Para el cableado eso cambia dos cosas:
+
+- Se controla **igual, por PWM**, con el mismo conector de tres hilos. El código no cambia:
+  sigue siendo `frc::Servo` en el canal 0.
+- **La alimentación depende de la versión.** Los L16 vienen en 6 V y en 12 V. El de 6 V se
+  enchufa al puerto PWM como cualquier servo; el de 12 V **no** — necesita 12 V desde el
+  PDH y solo la señal viene del roboRIO. Conectar un actuador de 12 V al riel de 6 V no lo
+  rompe, pero se mueve lento y sin fuerza, y parece que está trabado.
+- Consumen bastante menos que un servo grande: el L16 da **650 mA en atasco**, holgado
+  dentro de los 2.2 A. Si es de 6 V, no hace falta SPM.
+
+**Confirmen el voltaje impreso en la etiqueta del actuador antes de enchufarlo.** No lo
+deduzcan del catálogo: Actuonix vende el mismo modelo en las dos versiones.
+
+---
+
 ## Lo que falta confirmar
 
 Estas cosas dependen de piezas que hay que ver físicamente, y **la hoja las marca en vez
@@ -273,3 +353,11 @@ de inventarlas**:
 - **Offsets de los encoders absolutos.** En `Constants.h` están todos en `0_tr`. Se miden
   con las ruedas físicamente alineadas y se anotan ahí. Hasta entonces el swerve va a
   moverse raro, y **eso es esperado, no una falla de cableado**.
+- **Qué servo es el del hood, y cuánto jala.** La §9 asume que va al riel de 6 V del
+  roboRIO porque el código lo declara en el PWM 0, pero **nadie ha medido su consumo con el
+  hood montado**. Se mide con pinza amperimétrica en el cable de potencia del servo,
+  moviendo el hood de tope a tope con el mecanismo puesto. Si pasa de ~1.5 A, va SPM. Si
+  resulta ser un Actuonix, además hay que confirmar si es la versión de 6 V o la de 12 V.
+- **Consumo real en una subida.** Los límites de corriente están puestos pero **nadie ha
+  grabado un log de una subida**. Sin eso, todas las cuentas de este documento son
+  predicciones, no mediciones. Es lo que convierte el diagnóstico en dato.

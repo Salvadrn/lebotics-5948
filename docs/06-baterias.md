@@ -38,21 +38,27 @@ es que el robot termine el partido o se muera en la rampa.**
 
 ## 2 · Cuánta resistencia interna aguanta este robot
 
-El roboRIO 1 hace brownout cerca de **6.8 V**. Despejando la fórmula, la resistencia
-máxima que tolera antes de apagarse es:
+El roboRIO 1 tiene **dos** umbrales, y el que más se cita es el equivocado:
+
+- **6.8 V** — el riel de 6 V de los puertos PWM empieza a caer. **El servo del hood se
+  degrada aquí**, mucho antes de que el robot se apague, y como el hood es lazo abierto
+  nadie se entera.
+- **6.3 V** — brownout de verdad: se apagan las salidas. En el roboRIO 1 es **fijo**.
+
+Despejando con el umbral duro, la resistencia máxima que tolera antes de apagarse:
 
 ```
-R_max = (V_reposo − 6.8) / I_total
+R_max = (V_reposo − 6.3) / I_total
 ```
 
 Con una batería cargada a 12.6 V:
 
 | Corriente total | R_max antes de brownout | Qué escenario es |
 |---|---|---|
-| 140 A | 0.041 Ω | tracción sostenida (4 × 35 A) |
-| 160 A | 0.036 Ω | tracción en pico (4 × 40 A) |
-| 250 A | **0.023 Ω** | subida con lanzador y giro a la vez |
-| 280 A | 0.021 Ω | si los límites de supply no se aplicaron |
+| 140 A | 0.045 Ω | tracción sostenida (4 × 35 A) |
+| 160 A | 0.039 Ω | tracción en pico (4 × 40 A) |
+| 250 A | **0.025 Ω** | subida con lanzador y giro a la vez |
+| 280 A | 0.023 Ω | si los límites de supply no se aplicaron |
 
 Y al revés, cuánto cae el voltaje en una subida de 250 A según qué tan sana esté:
 
@@ -60,13 +66,14 @@ Y al revés, cuánto cae el voltaje en una subida de 250 A según qué tan sana 
 |---|---|---|
 | 0.012 Ω | 9.6 V | pasa sin despeinarse |
 | 0.018 Ω | 8.1 V | pasa, la guardia de voltaje entra |
-| 0.023 Ω | 6.85 V | al borde |
-| 0.025 Ω | 6.35 V | **brownout** |
+| 0.023 Ω | 6.85 V | **el riel de 6 V empieza a caer** — el hood miente |
+| 0.025 Ω | 6.35 V | al borde del brownout |
 | 0.030 Ω | 5.1 V | **brownout seguro** |
 
 **La regla que sale de esto: cualquier batería arriba de 0.020 Ω no entra a competencia.**
-El margen entre 0.020 y 0.023 es lo único que separa "aguantó" de "se murió", y ese margen
-se lo come un conector flojo.
+El criterio se queda en 0.020 aunque el brownout duro esté en 0.025, por dos razones: a
+0.023 el hood ya empezó a fallar en silencio, y ese margen de tres milésimas se lo come un
+solo conector flojo. **0.020 Ω es el número que hay que memorizar.**
 
 **Ojo con el número que asume el repo.** `05-corriente-y-brownout.md` hace las cuentas con
 0.018 Ω. Eso ya es una batería *cansada*, no una sana. Si al medir salen 0.012, la física

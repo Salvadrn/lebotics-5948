@@ -117,8 +117,27 @@ hasta dejarla al 35 % cuando toca 7.5 V.
 La idea es que el robot **se ponga lento en vez de morirse**. Un robot lento sigue jugando;
 un robot en brownout no.
 
-El roboRIO 1 hace brownout alrededor de **6.8 V** (el roboRIO 2 aguanta hasta ~6.3 V). El
-piso de 7.5 V deja margen antes de llegar ahí.
+### Los dos umbrales del roboRIO, y cuál es cuál
+
+Esto estaba mal en el repo hasta el 2026-08-12 y vale la pena decirlo con claridad, porque
+todas las cuentas de arriba dependen de ello. **No hay un umbral: hay dos**, y pasan cosas
+distintas en cada uno.
+
+| Voltaje del bus | Qué pasa | roboRIO 1 | roboRIO 2 |
+|---|---|---|---|
+| **6.8 V** | el **riel de 6 V de los puertos PWM empieza a caer** | igual en los dos | igual en los dos |
+| **brownout: se apagan las salidas PWM** | el controlador se salva a sí mismo | **6.3 V**, fijo | 6.75 V, ajustable por software |
+
+**El roboRIO 1 aguanta *más*, no menos.** El 6.3 V es fijo y no se puede mover; el
+`SetBrownoutVoltage()` de WPILib solo hace algo en el roboRIO 2, en el 1 es un no-op.
+
+El 6.8 V sí importa, pero **no es el brownout**: es donde el riel de 6 V empieza a
+desplomarse. Ahí es donde el **servo del hood** se pone a mentir antes de que el robot se
+apague — está en [`02-cableado.md`](02-cableado.md) §9.
+
+Con esos dos números, el piso de la guardia en 7.5 V deja **0.7 V de margen al riel de los
+PWM** y **1.2 V al brownout duro**. Está bien puesto: protege el servo antes que el
+roboRIO, que es el orden correcto porque el servo falla primero y en silencio.
 
 **El techo de 9.5 V es más alto de lo que parece.** Con la tracción en su límite —4 × 40 A
 = 160 A— y una batería sana de 0.018 Ω, el bus se queda en 9.72 V: arriba del techo. Para
