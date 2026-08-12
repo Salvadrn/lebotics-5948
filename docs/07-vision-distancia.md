@@ -4,6 +4,20 @@
 estaba equivocado. Esta guía los convierte en números medidos. Toma unos 30 minutos con
 una cinta métrica, un tag impreso y el robot encendido.
 
+> # ⚠️ EN ENERO, ANTES DE TOCAR NADA MÁS
+>
+> **Esta calibración caduca con la temporada.** Al salir el juego nuevo cambian el campo,
+> las alturas de los tags y probablemente dónde va montada la cámara.
+>
+> 1. Subir el vendordep de WPILib de la temporada nueva. Las alturas de los tags se
+>    actualizan **solas** — el código las lee del layout oficial, no de una tabla nuestra.
+> 2. Volver a correr esta guía completa. `kCameraHeight` y `kCameraPitch` **no** se
+>    actualizan solos: son del robot, no del campo.
+> 3. Poner `kCameraGeometryMedida` en `false` hasta terminarla.
+>
+> Saltarse el punto 2 es peor que no calibrar: el robot resuelve tiros con toda confianza
+> contra una geometría del año pasado, y el dashboard sale en verde mientras falla.
+
 ## La fórmula
 
 ```
@@ -28,21 +42,9 @@ medir bien.
 ## Lo primero que encontramos: el tag estaba a la altura de 2024
 
 `kTagHeight` estaba en **57.13 in**. Ese número es la altura de los tags del *speaker* de
-**Crescendo 2024** (tags 3, 4, 7 y 8). El campo de esta temporada no tiene ningún tag ahí.
+**Crescendo 2024** (tags 3, 4, 7 y 8). El campo de Rebuilt 2026 no tiene ningún tag ahí.
 
-Sacamos las alturas reales del layout que trae WPILib 2026.2.1 — es la fuente oficial, la
-misma que carga `AprilTagFieldLayout`:
-
-| Fila | Altura del centro | Tags |
-|---|---|---|
-| Alta | **44.25 in** (1.12395 m) | 2, 3, 4, 5, 8, 9, 10, 11, 18, 19, 20, 21, 24, 25, 26, 27 |
-| Media | **35.00 in** (0.88900 m) | 1, 6, 7, 12, 17, 22, 23, 28 |
-| Baja | **21.75 in** (0.55245 m) | 13, 14, 15, 16, 29, 30, 31, 32 |
-
-Las alturas son idénticas en las dos variantes del campo (AndyMark y Welded), así que no
-hay que elegir.
-
-Con el valor viejo, viendo un tag de la fila alta, el código reportaba esto:
+Con ese valor, viendo un tag de la fila alta, el código reportaba esto:
 
 | Distancia real | Lo que reportaba el código |
 |---|---|
@@ -54,10 +56,37 @@ Con el valor viejo, viendo un tag de la fila alta, el código reportaba esto:
 Más del **60 % de error**, y creciendo. Ninguna calibración de pitch arregla eso, porque el
 error no está en el ángulo: está en el `Δh` de arriba de la división.
 
-**Ya está corregido en el código**: `kTagHeight` desapareció y en su lugar hay
-`constants::vision::TagHeight(tagId)`, que devuelve la altura de la fila a la que pertenece
-el tag que la cámara está viendo. Un solo `kTagHeight` no puede existir en un campo con tres
-filas de tags.
+## De dónde sale hoy la altura del tag
+
+**De ninguna tabla escrita a mano.** `Vision::TagHeight(tagId)` la lee de
+`frc::AprilTagFieldLayout::LoadField(kDefaultField)` — el layout oficial que viene dentro de
+la versión de WPILib que tengan instalada, el mismo que usa todo el mundo.
+
+Esto importa más de lo que parece. Una tabla escrita a mano no se entera de que cambió la
+temporada: en enero seguiría devolviendo las alturas del año pasado, sin error, sin
+advertencia, y ahora que [`util/ShotSolver`](09-tiro-balistico.md) consume esa altura para
+resolver el tiro, eso ya no es una distancia mal medida — es un tiro que falla con el
+dashboard en verde.
+
+Leyéndola del layout, **al subir el vendordep de la temporada nueva las alturas se
+actualizan solas**.
+
+Lo que trae hoy WPILib 2026.2.1 (`kDefaultField` = Rebuilt 2026), para referencia al medir:
+
+| Fila | Altura del centro | Tags |
+|---|---|---|
+| Alta | 44.25 in (1.12395 m) | 2, 3, 4, 5, 8, 9, 10, 11, 18, 19, 20, 21, 24, 25, 26, 27 |
+| Media | 35.00 in (0.88900 m) | 1, 6, 7, 12, 17, 22, 23, 28 |
+| Baja | 21.75 in (0.55245 m) | 13, 14, 15, 16, 29, 30, 31, 32 |
+
+Idénticas en las dos variantes del campo (AndyMark y Welded), así que no hay que elegir.
+
+> **Esa tabla es solo para leer, no está en el código.** Si la copian a mano a algún lado,
+> acaban de reintroducir el problema que este diseño evita.
+
+Si `Vision/LayoutCargado` sale en `false`, el layout no cargó: no hay altura de tag, no hay
+distancia, y no hay tiro resuelto. Es a propósito — mejor sin distancia que con una
+distancia inventada.
 
 ---
 
@@ -197,6 +226,32 @@ un tag de la fila alta, **1° de error de pitch** vale 4 cm a 1 m, pero **47 cm 
 
 ---
 
+## Lo que esta distancia NO es
+
+Desde que [`util/ShotSolver`](09-tiro-balistico.md) resuelve el tiro con este número, vale
+la pena decir con precisión qué mide:
+
+- Es **horizontal**, no en línea recta al tag.
+- Va del **lente de la cámara** al **plano del tag** — no del bumper, no del centro del
+  robot, y **no de la boca del lanzador**.
+- Es al **tag**, que es una calcomanía cerca del objetivo, no al objetivo.
+
+Los dos últimos son deuda pendiente de quien arme el tiro, y ninguno se arregla calibrando
+mejor:
+
+| Si… | Entonces cada tiro sale… | Se arregla con |
+|---|---|---|
+| El lanzador está 30 cm detrás de la cámara | 30 cm corto, siempre | Una constante de offset cámara→lanzador |
+| El objetivo está 40 cm arriba/atrás del tag | Desviado esa misma cantidad | La transformada tag→objetivo |
+
+Hoy `AutoAimCommand` le pasa a `SolveShot` la distancia al tag y la altura del tag tal cual.
+Mientras la cámara y el lanzador no estén en el mismo punto del robot, **eso es un sesgo
+constante**, y un sesgo constante se ve exactamente igual que una eficiencia de transferencia
+mal calibrada. Si calibran `kTransferEfficiency` sin corregir esto primero, van a meterle el
+error de montaje al modelo balístico y a taparlo — hasta que muevan la cámara.
+
+Es de Superestructura decidir cómo lo modela; de Visión, dejarlo dicho.
+
 ## La fila baja de tags no sirve para trigonometría
 
 Con la cámara a 24 in, los tags de 21.75 in quedan **por debajo** de la cámara: el `Δh` es
@@ -259,8 +314,11 @@ el orden del arreglo antes de confiar en la fusión de pose.
 | `Vision/TagID` | Cuál |
 | `Vision/AlturaTagPulgadas` | La altura que el código está usando para ese tag (`-1` = tag desconocido) |
 | `Vision/TyGrados` | `ty` crudo |
+| `Vision/OffsetGrados` | `tx` crudo — el ángulo horizontal que consume la torreta |
 | `Vision/DistanciaMetros` | Distancia calculada (`-1` = no confiable) |
 | `Vision/GeometriaMedida` | `false` mientras la altura y el pitch sean supuestos |
+| `Vision/LayoutCargado` | El layout oficial de AprilTags cargó. En `false` no hay distancia |
+| `Vision/LayoutTags` · `Vision/LayoutLargoMetros` | Cuántos tags y qué largo tiene el campo cargado — para confirmar de un vistazo que es el campo de la temporada en curso |
 | `Vision/Calib/DistanciaRealMetros` | **Entrada**: lo que dice la cinta |
 | `Vision/Calib/Muestras` | Cuántas muestras lleva el promedio (llega a 50) |
 | `Vision/Calib/TyPromedioGrados` | `ty` promediado |
@@ -272,4 +330,5 @@ el orden del arreglo antes de confiar en la fusión de pose.
 | `Vision/Latencia/BotposeMs` · `Vision/Latencia/TlMasClMs` | Para el chequeo de latencia |
 
 El promedio se reinicia solo cuando cambian `DistanciaRealMetros` o cuando la cámara cambia
-de tag. No hay que apretar nada entre estaciones.
+a **otro** tag. No hay que apretar nada entre estaciones, y perder el tag un par de cuadros
+—que pasa seguido— no borra lo acumulado.

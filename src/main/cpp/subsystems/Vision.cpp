@@ -22,6 +22,26 @@ Vision::Vision()
           constants::vision::kLimelightName)} {
   SetName("Vision");
   frc::SmartDashboard::SetDefaultNumber(kCalibDistanceKey, 0.0);
+
+  try {
+    m_fieldLayout = frc::AprilTagFieldLayout::LoadField(
+        frc::AprilTagField::kDefaultField);
+  } catch (...) {
+    m_fieldLayout = std::nullopt;
+  }
+}
+
+std::optional<units::meter_t> Vision::TagHeight(int tagId) const {
+  if (!m_fieldLayout) {
+    return std::nullopt;
+  }
+
+  const auto pose = m_fieldLayout->GetTagPose(tagId);
+  if (!pose) {
+    return std::nullopt;
+  }
+
+  return pose->Z();
 }
 
 void Vision::Periodic() {
@@ -34,6 +54,15 @@ void Vision::PublishTelemetry() {
   frc::SmartDashboard::PutBoolean("Vision/VeTag", HasTarget());
   frc::SmartDashboard::PutBoolean("Vision/GeometriaMedida",
                                   constants::vision::kCameraGeometryMedida);
+  frc::SmartDashboard::PutBoolean("Vision/LayoutCargado",
+                                  m_fieldLayout.has_value());
+  frc::SmartDashboard::PutNumber(
+      "Vision/LayoutTags",
+      m_fieldLayout ? static_cast<double>(m_fieldLayout->GetTags().size())
+                    : 0.0);
+  frc::SmartDashboard::PutNumber(
+      "Vision/LayoutLargoMetros",
+      m_fieldLayout ? m_fieldLayout->GetFieldLength().value() : 0.0);
 
   if (m_lastTarget) {
     frc::SmartDashboard::PutNumber("Vision/TagID", m_lastTarget->tagId);
@@ -69,7 +98,7 @@ void Vision::ResetCalibration() {
 void Vision::UpdateCalibration() {
   const double realDistance =
       frc::SmartDashboard::GetNumber(kCalibDistanceKey, 0.0);
-  const int tagId = m_lastTarget ? m_lastTarget->tagId : -1;
+  const int tagId = m_lastTarget ? m_lastTarget->tagId : m_calibrationTagId;
 
   if (std::abs(realDistance - m_calibrationDistance) > 1e-6 ||
       tagId != m_calibrationTagId) {
@@ -158,7 +187,7 @@ std::optional<VisionTarget> Vision::GetTarget() {
       units::degree_t{m_table->GetNumber("tx", 0.0)};
   target.verticalOffset = units::degree_t{m_table->GetNumber("ty", 0.0)};
   target.area = m_table->GetNumber("ta", 0.0);
-  target.tagHeight = constants::vision::TagHeight(target.tagId);
+  target.tagHeight = TagHeight(target.tagId);
 
   if (!target.tagHeight) {
     return target;

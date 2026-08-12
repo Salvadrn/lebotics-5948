@@ -34,10 +34,11 @@ Dos caminos, ambos en el código:
    distancia media — con la cámara a 22.5" y un tag de la fila alta, 1° vale 4 cm a 1 m y
    47 cm a 4 m.
 
-   La altura del tag no es una constante: Rebuilt 2026 tiene tres filas y el código la
-   busca por ID con `vision::TagHeight(tagId)`. Cuando el tag queda casi a la altura de la
-   cámara (`|Δh| < kMinTrustedHeightDelta`) la distancia se descarta, porque ahí la
-   tangente amplifica cualquier error de pitch hasta volverla basura.
+   La altura del tag no es una constante ni una tabla nuestra: `Vision::TagHeight(tagId)`
+   la lee del layout oficial de WPILib, así que se actualiza sola al cambiar de temporada.
+   Cuando el tag queda casi a la altura de la cámara (`|Δh| < kMinTrustedHeightDelta`) la
+   distancia se descarta, porque ahí la tangente amplifica cualquier error de pitch hasta
+   volverla basura.
 
 2. **`botpose_wpiblue`** para alimentar el pose estimator del chasis con la posición
    absoluta en la cancha. Más potente, más ruidoso.
@@ -53,24 +54,36 @@ Dos caminos, ambos en el código:
    `Timer::GetFPGATimestamp()` pelón al pose estimator, le estás mintiendo sobre cuándo se
    tomó la foto y el filtro se degrada.
 
-## Lo primero que te toca
+## Estado y pendientes
 
-Todo el procedimiento está en [`docs/07-vision-distancia.md`](../07-vision-distancia.md).
-El código ya trae la telemetría y la herramienta para hacerlo; falta la parte física.
+**Hecho, en código:**
 
-1. ~~**Poner la altura real del AprilTag**~~ — hecho. `kTagHeight` estaba en 57.13", que es
-   la altura del speaker de Crescendo 2024. Rebuilt 2026 tiene tres filas de tags (21.75",
-   35" y 44.25"), así que ya no hay una constante sino `vision::TagHeight(tagId)`.
-2. **Medir `kCameraHeight` con cinta**, con el robot en el piso, con batería y bumpers.
-3. **Resolver `kCameraPitch`** con `Vision/Calib/PitchImplicadoGrados` y
-   `tools/vision-pitch.py`. No lo midas con transportador.
-4. **Validar contra la cinta** a 1, 2, 3 y 4 m, y llenar la tabla del doc.
-5. **Verificar la latencia**: el dashboard publica `Vision/Latencia/BotposeMs` (índice 6 de
-   `botpose_wpiblue`) junto a `Vision/Latencia/TlMasClMs`. Si no se parecen, el índice
-   cambió en el firmware que tengan instalado.
+- La altura del tag ya no es un número nuestro. `kTagHeight` estaba en 57.13" — la altura
+  del speaker de **Crescendo 2024**, dos temporadas atrás — y daba 60 % de error.
+  `Vision::TagHeight(tagId)` la lee del layout oficial de WPILib.
+- Telemetría de calibración (`Vision/Calib/*`) que resuelve el pitch sola, documentada en
+  [`docs/07-vision-distancia.md`](../07-vision-distancia.md).
+- `tools/vision-pitch.py`, que ajusta el pitch por mínimos cuadrados sobre las cuatro
+  estaciones y avisa cuándo los datos no cierran.
+- La distancia se descarta cuando la geometría no la sostiene, en vez de reportar basura.
 
-Mientras `kCameraGeometryMedida` siga en `false`, la distancia que ve el equipo sale de
-supuestos y el dashboard lo dice.
+**Pendiente, y por qué sigue pendiente:**
+
+| Pendiente | Por qué no está hecho |
+|---|---|
+| Medir `kCameraHeight` (hoy 24", supuesto) | Requiere cinta métrica y el robot armado. No se puede hacer desde el código |
+| Resolver `kCameraPitch` (hoy 25°, supuesto) | Requiere el robot viendo un tag a 1, 2, 3 y 4 m |
+| Llenar la tabla de validación | Sale de las mismas cuatro estaciones |
+| Verificar la latencia | Requiere el Limelight encendido: comparar `Vision/Latencia/BotposeMs` contra `Vision/Latencia/TlMasClMs` |
+| Offset cámara → lanzador | Es de Superestructura decidirlo; está explicado en el doc |
+
+Los cuatro primeros son **una sola sesión de 30 minutos con el robot**, y el procedimiento
+está escrito paso a paso. Lo único que falta es estar frente al robot.
+
+> **Esto ya no es solo precisión de odometría.** Desde que `util/ShotSolver` resuelve el
+> tiro con esta distancia, un error de 20 cm aquí es un tiro fallado. Mientras
+> `kCameraGeometryMedida` siga en `false`, el robot está resolviendo tiros contra una
+> cámara que nadie ha medido — y el dashboard lo dice, en `Vision/GeometriaMedida`.
 
 ## Trampas
 

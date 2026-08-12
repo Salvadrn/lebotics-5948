@@ -185,7 +185,7 @@ eficiencia.
 
 | Mensaje | Qué pasó | Qué hacer |
 |---|---|---|
-| `Sin blanco` | La cámara no ve un tag, o ve uno que no está en la tabla de alturas | Acercarse, o revisar `constants::vision::TagHeight` |
+| `Sin blanco` | La cámara no ve un tag, ve uno que no está en el layout del campo, o la geometría no permite calcular la distancia | Acercarse, y revisar `Vision/LayoutCargado` y `Vision/DistanciaMetros` — ver [`docs/07-vision-distancia.md`](07-vision-distancia.md) |
 | `Muy cerca: tirar a mano` | Menos de 0.8 m: la parábola se vuelve casi vertical | Retroceder |
 | `El hood no sube lo suficiente` | Con el ángulo máximo el proyectil ya viene bajando antes de llegar | Acercarse, o ampliar el rango del hood |
 | `Muy lejos: falta lanzador` | Haría falta más RPM de las que da el Kraken | Acercarse |

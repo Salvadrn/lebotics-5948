@@ -6,6 +6,7 @@
 #include <optional>
 #include <utility>
 
+#include <frc/apriltag/AprilTagFieldLayout.h>
 #include <frc/geometry/Pose2d.h>
 #include <frc2/command/SubsystemBase.h>
 #include <networktables/NetworkTable.h>
@@ -45,10 +46,13 @@ class Vision : public frc2::SubsystemBase {
 
   void ResetCalibration();
 
+  std::optional<units::meter_t> TagHeight(int tagId) const;
+
  private:
   void PublishTelemetry();
   void UpdateCalibration();
 
+  std::optional<frc::AprilTagFieldLayout> m_fieldLayout;
   std::shared_ptr<nt::NetworkTable> m_table;
   std::optional<VisionTarget> m_lastTarget;
 
