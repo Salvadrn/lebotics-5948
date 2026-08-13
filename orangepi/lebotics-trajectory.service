@@ -1,0 +1,23 @@
+[Unit]
+Description=Lebotics 5948 - servidor de trayectorias
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=lebotics
+WorkingDirectory=/home/lebotics/lebotics-5948/orangepi
+ExecStart=/home/lebotics/venv/bin/python trajectory_server.py
+
+# El servicio arranca antes de que el roboRIO exista y sobrevive a que el rio se
+# reinicie a media practica. Reiniciar siempre, sin limite de intentos, es lo
+# correcto aqui: un coprocesador que se rinde tras cinco fallos es un
+# coprocesador muerto a media competencia.
+Restart=always
+RestartSec=2
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

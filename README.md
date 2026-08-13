@@ -52,6 +52,37 @@ checklist de verificación con multímetro antes de energizar.
 > Phoenix 6 todavía no publica vendordep para 2027. Arrancamos en 2026 y migramos cuando
 > salga la beta. El código de swerve migra casi sin cambios.
 
+> ### ⚠️ El roboRIO se retira en 2027
+>
+> Esto es de planeación, no de código, y conviene tenerlo presente desde ahora.
+>
+> En **enero de 2027** llega **Systemcore**, el controlador que reemplaza al roboRIO:
+> Raspberry Pi CM5, quad-core Cortex-A76, **4 GB de RAM**, GPU y Linux real-time. Cada equipo
+> recibe uno en su *Kit of Parts* 2027, y por lo que se ha comunicado **los roboRIO no van a
+> correr junto a Systemcore en 2027** — o sea, dejan de ser legales en competencia de FRC.
+> (Ese último punto conviene reconfirmarlo contra el anuncio oficial cuando salga el manual.)
+>
+> Tres consecuencias para nosotros:
+>
+> 1. **Este robot es de offseason, así que el roboRIO 1 está perfecto.** Nada urgente.
+> 2. **Toda la discusión de "nos falta RAM" se vuelve historia.** Systemcore trae 4 GB contra
+>    los 256 MB del roboRIO 1 — dieciséis veces más. Ver [`docs/10-coprocesador.md`](docs/10-coprocesador.md).
+> 3. **El código C++ sigue sirviendo.** WPILib soporta Systemcore; lo que cambia es el
+>    hardware debajo, no la estructura del proyecto.
+>
+> **Y la razón por la que esto aparece en el README:** la Driver Station nueva —la que sí
+> corre en macOS y Linux— es **para Systemcore, no para roboRIO**. Con un roboRIO, la Driver
+> Station es **solo Windows**, sin excepción ni alternativa. Y aun con Systemcore, macOS y
+> Linux sirven para practicar pero **no para jugar en un evento**: el soporte de FMS solo va
+> a estar en Windows.
+>
+> Traducción práctica: **el equipo necesita al menos una laptop con Windows.** Es la de la
+> Driver Station, la que se lleva al evento, y la que imagina el roboRIO con las *FRC Game
+> Tools*. El desarrollo diario puede seguir en macOS.
+>
+> Fuentes: [The 2027 FIRST Driver Station (WPILib)](https://wpilib.org/blog/the-2027-first-driver-station) ·
+> [Systemcore (WPILib docs)](https://docs.wpilib.org/en/latest/docs/software/systemcore-info/systemcore-introduction.html)
+
 > **Ojo con navX:** el vendordep correcto es **Studica**, no *StudicaLib*. StudicaLib es
 > solo para el NavX3-CAN y no contiene la clase `AHRS`. Los dos vendordeps se excluyen
 > mutuamente.
