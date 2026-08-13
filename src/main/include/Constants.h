@@ -340,6 +340,37 @@ inline constexpr double kVisionStdDevTheta = 9999999.0;
 
 }  // namespace vision
 
+namespace bridge {
+
+inline constexpr char kRequestTopic[] = "/Bridge/Request";
+inline constexpr char kResponseTopic[] = "/Bridge/Response";
+inline constexpr char kHeartbeatTopic[] = "/Bridge/Heartbeat";
+
+// Layout del mensaje. Tiene que coincidir con orangepi/trajectory.py.
+inline constexpr size_t kRequestLength = 13;
+inline constexpr size_t kResponseHeader = 3;
+inline constexpr size_t kSampleWidth = 7;
+
+// Cuanto espera el rio la respuesta antes de rendirse. La Pi tarda decenas de
+// milisegundos; 2 s es generoso a proposito para que un timeout signifique
+// "algo esta mal" y no "iba lento".
+inline constexpr units::second_t kResponseTimeout = 2_s;
+
+// Sin latido en este tiempo, la Pi cuenta como muerta. Ella late cada 250 ms.
+inline constexpr units::second_t kHeartbeatTimeout = 1_s;
+
+// Cotas de cordura del payload. Una trayectoria fuera de esto no se ejecuta.
+inline constexpr size_t kMaxSamples = 200;
+inline constexpr units::second_t kMaxDuration = 15_s;
+
+// Que tan lejos puede empezar la trayectoria de donde el robot esta de verdad.
+// Es LA validacion que importa: una trayectoria vieja, o calculada desde una
+// pose que ya no es, se ve perfectamente valida en su forma y manda el robot a
+// donde no debe.
+inline constexpr units::meter_t kStartTolerance = 0.5_m;
+
+}  // namespace bridge
+
 namespace oi {
 
 inline constexpr int kDriverPort = 0;

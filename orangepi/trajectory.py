@@ -28,7 +28,13 @@ REQ_GOAL_Y = 8
 REQ_GOAL_THETA = 9
 REQ_MAX_VEL = 10
 REQ_MAX_ACCEL = 11
-REQ_LENGTH = 12
+# El radio del chasis viaja EN LA PETICIÓN, no en un archivo de config de este
+# lado. Es la lección más cara de KAIROS: si la Pi genera con constantes
+# distintas a las del rio, produce trayectorias físicamente imposibles de seguir
+# y NINGUNA validación de forma lo detecta — el payload está perfecto, solo que
+# es mentira. Mandándolo en cada petición no se puede desincronizar.
+REQ_DRIVE_BASE_RADIUS = 12
+REQ_LENGTH = 13
 
 STATUS_OK = 0
 STATUS_BAD_REQUEST = 1
@@ -55,6 +61,7 @@ class Request:
     goal: np.ndarray  # [x, y, theta]
     max_velocity: float
     max_acceleration: float
+    drive_base_radius: float
 
     @staticmethod
     def parse(raw) -> "Request | None":
@@ -64,6 +71,8 @@ class Request:
         if not all(np.isfinite(v) for v in raw[:REQ_LENGTH]):
             return None
         if raw[REQ_MAX_VEL] <= 0.0 or raw[REQ_MAX_ACCEL] <= 0.0:
+            return None
+        if raw[REQ_DRIVE_BASE_RADIUS] <= 0.0:
             return None
 
         return Request(
@@ -75,6 +84,7 @@ class Request:
             goal=np.array(raw[REQ_GOAL_X : REQ_GOAL_THETA + 1], dtype=float),
             max_velocity=float(raw[REQ_MAX_VEL]),
             max_acceleration=float(raw[REQ_MAX_ACCEL]),
+            drive_base_radius=float(raw[REQ_DRIVE_BASE_RADIUS]),
         )
 
 
@@ -161,10 +171,55 @@ def generate(request: Request) -> tuple[int, np.ndarray]:
          velocity[:, 0], velocity[:, 1], omega]
     )
 
+    samples = _respect_module_limit(
+        samples, request.max_velocity, request.drive_base_radius
+    )
+
     if not np.all(np.isfinite(samples)):
         return STATUS_SOLVER_FAILED, np.empty((0, SAMPLE_WIDTH))
 
     return STATUS_OK, samples
+
+
+def module_speeds(samples: np.ndarray, drive_base_radius: float) -> np.ndarray:
+    """Velocidad de la rueda más desfavorecida en cada muestra.
+
+    En un swerve girando y avanzando a la vez, la rueda exterior lleva la suma de
+    las dos: la velocidad del chasis más omega por el radio del chasis. Es una
+    cota superior (el peor caso geométrico), que es justo lo que se quiere para
+    no rebasar.
+    """
+    translation = np.hypot(samples[:, 4], samples[:, 5])
+    return translation + np.abs(samples[:, 6]) * drive_base_radius
+
+
+def _respect_module_limit(
+    samples: np.ndarray, max_velocity: float, drive_base_radius: float
+) -> np.ndarray:
+    """Estira la trayectoria en el tiempo si alguna rueda se pasa del límite.
+
+    Perfilar traslación y heading por separado respeta cada límite por su lado
+    pero VIOLA el de la rueda, porque en la rueda se suman. Sin esto, una
+    trayectoria que se ve perfecta en el papel manda al módulo exterior arriba de
+    su velocidad máxima, el swerve satura, y el robot se sale de la curva sin que
+    ninguna validación de forma note nada.
+
+    El arreglo es estirar el tiempo, no recortar velocidades: recortar rompe la
+    coherencia entre posición y velocidad, y el seguidor del rio la usa como
+    feedforward. Estirar preserva la geometría completa — mismo camino, más
+    despacio.
+    """
+    if len(samples) == 0:
+        return samples
+
+    peak = float(np.max(module_speeds(samples, drive_base_radius)))
+    if peak <= max_velocity or peak <= 0.0:
+        return samples
+
+    stretch = peak / max_velocity
+    samples[:, 0] *= stretch
+    samples[:, 4:7] /= stretch
+    return samples
 
 
 def encode_response(request_id: float, status: int, samples: np.ndarray) -> list[float]:

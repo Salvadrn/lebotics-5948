@@ -14,7 +14,15 @@ import sys
 
 import numpy as np
 
-from trajectory import Request, generate, STATUS_OK, STATUS_TOO_SHORT
+from trajectory import (
+    Request,
+    generate,
+    module_speeds,
+    STATUS_OK,
+    STATUS_TOO_SHORT,
+)
+
+DRIVE_BASE_RADIUS = 0.404
 
 TOL = 1e-6
 failures = []
@@ -36,6 +44,7 @@ def make(start, goal, start_vel=(0.0, 0.0, 0.0), max_vel=3.0, max_accel=2.0):
         goal=np.array(goal),
         max_velocity=max_vel,
         max_acceleration=max_accel,
+        drive_base_radius=DRIVE_BASE_RADIUS,
     )
 
 
@@ -81,9 +90,31 @@ status, _ = generate(make((0, 0, 0), (0, 0, 0)))
 check("distancia cero se rechaza", status == STATUS_TOO_SHORT)
 
 check("petición corta se rechaza", Request.parse([1.0, 2.0]) is None)
-check("petición con NaN se rechaza", Request.parse([float("nan")] * 12) is None)
+check("petición con NaN se rechaza", Request.parse([float("nan")] * 13) is None)
 check("velocidad maxima en cero se rechaza",
-      Request.parse([0.0] * 10 + [0.0, 1.0]) is None)
+      Request.parse([0.0] * 10 + [0.0, 1.0, 0.4]) is None)
+check("radio de chasis en cero se rechaza",
+      Request.parse([0.0] * 10 + [3.0, 2.0, 0.0]) is None)
+check("peticion de 12 campos (protocolo viejo) se rechaza",
+      Request.parse([1.0] * 12) is None)
+
+print("\nLimite de velocidad de MODULO, no solo de chasis")
+# Giro grande con poca traslacion: la rueda exterior suma traslacion + omega*r,
+# y es el caso que revienta el limite si se perfilan por separado.
+for name, req in [
+    ("giro de 180 en 1 m", make((0, 0, 0), (1, 0, np.pi))),
+    ("giro de 90 en 0.5 m", make((0, 0, 0), (0.5, 0, np.pi / 2))),
+    ("diagonal con giro completo", make((0, 0, 0), (2, 2, np.pi))),
+]:
+    status, s_ = generate(req)
+    peak = float(np.max(module_speeds(s_, DRIVE_BASE_RADIUS)))
+    check(
+        f"{name}: ninguna rueda rebasa 3.0 m/s",
+        peak <= 3.0 * 1.001,
+        f"pico de modulo={peak:.3f}",
+    )
+    check(f"{name}: sigue llegando a la meta",
+          abs(s_[-1, 1] - req.goal[0]) < 1e-3 and abs(s_[-1, 2] - req.goal[1]) < 1e-3)
 
 print("\nTodo finito")
 for name, req in [
