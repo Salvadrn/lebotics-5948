@@ -57,12 +57,19 @@ tres pestañas (Partido, Pits, Calibracion) en `src/main/deploy/elastic-layout.j
 sube al robot con el código.
 
 La pestaña de Partido tiene cuatro focos grandes — batería, potencia plena, lanzador listo y
-tiro listo — más una tira delgada con el estado del tiro, si ve el tag, y un foco ámbar que
-junta las ocho banderas de "esto todavía trae números de fábrica".
+tiro listo — más una tira delgada con el estado del tiro, si el campo relativo sigue vivo, si
+ve el tag, y un foco ámbar que junta las ocho banderas de "esto todavía trae números de
+fábrica".
 
 También está el indicador de la guardia de voltaje (`Piloto/PotenciaPlena`), en **ámbar y no
 rojo**: rojo dice "falla" y el piloto deja de jugar; ámbar dice "el robot se está cuidando" y
 sigue jugando más suave, que es lo correcto.
+
+**Antes de commitear cualquier cambio al dashboard**, correr `python3
+tools/revisar-dashboard.py`. Atrapa las dos fallas que no se ven como error hasta que ya
+estás en competencia: un widget apuntando a una clave que nadie publica, y una bandera de
+calibración nueva que se quedó sin registrar — que dejaría el foco de FALTA CALIBRAR en verde
+mintiendo.
 
 ## Lo que falta
 
@@ -71,27 +78,27 @@ sigue jugando más suave, que es lo correcto.
    **Está pendiente porque necesita al piloto y al robot, no código.** Es lo primero que se
    hace en cuanto haya tiempo de manejo.
 
-2. **Fallback a robot-relative si se cae el giroscopio.** `GiroscopioConectado` se publica y
-   está en Pits, pero nadie reacciona. Sin giroscopio el field-relative sigue corriendo con
-   un heading congelado: el robot obedece, pero "adelante" ya no es adelante y el piloto lo
-   descubre chocando.
-
-   **No se hizo porque el cambio va en `Drivetrain::Drive()`, que es territorio de Chasis.**
-   El foco en Partido no se puso a propósito: sin el fallback, solo le avisaría al piloto que
-   ya perdió el control. Las dos cosas van juntas o no van.
-
-3. **Mover el botón A a una combinación menos fácil de picar.** Reinicia el norte del
+2. **Mover el botón A a una combinación menos fácil de picar.** Reinicia el norte del
    giroscopio a media partida. Propuesta: **Start + A**, o solo en disabled.
    **Pendiente de que el piloto real opine** — si nunca lo ha picado por accidente, no vale
    la pena complicar un control que sí usan al alinearse antes del match.
 
-4. **Bajar la frecuencia de la telemetría de calibración.** `Calibracion/*` son 24 valores a
-   50 Hz que solo se miran con el robot en bloques, y `Vision/Calib/*` igual. Es la ganancia
-   de CPU más grande que queda en un roboRIO 1.
-   **Es territorio de Chasis y Visión**, va como propuesta en `10-dashboard.md`.
+3. **`Calibracion/*` todavía sale a 50 Hz.** Son 24 valores que solo se miran con el robot en
+   bloques. Visión ya movió `Vision/Calib/*` a publicarse solo en disabled; falta que Chasis
+   haga lo mismo en `Drivetrain::PublishCalibrationTelemetry()`. **Es su territorio**, va como
+   propuesta en `10-dashboard.md`. Es la ganancia de CPU más grande que queda en un roboRIO 1.
 
-5. **Probar el dashboard con el robot prendido.** Los diez pasos están al final de
+4. **Probar el dashboard con el robot prendido.** Los diez pasos están al final de
    `10-dashboard.md`. Compilar no prueba nada aquí.
+
+## Lo que se cerró y de dónde salió
+
+- **Fallback a robot-relative si se cae el giroscopio.** Se reportó desde aquí, lo implementó
+  Chasis en `Drivetrain::Drive()` (commit `0e2f3fd`), y en cuanto existió entró el foco CAMPO
+  RELATIVO a la pestaña de Partido. El foco se había dejado fuera a propósito: avisar "se cayó
+  el giroscopio" sin que el código reaccione solo le informa al piloto que ya perdió el
+  control. Vale como precedente — **un indicador sin una reacción atrás no es información,
+  es ansiedad.**
 
 ## Trampas
 
