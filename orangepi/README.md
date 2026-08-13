@@ -43,7 +43,53 @@ python3 test_local.py
 No necesitas `pyntcore` para esto. Si algo de la matemática está mal, sale aquí en dos
 segundos en vez de en el taller con el robot en bloques.
 
+## Qué sistema operativo instalarle
+
+**Armbian, Ubuntu 24.04 (Noble), variante CLI / minimal.**
+Descarga: [armbian.com/boards/orangepi5](https://armbian.com/boards/orangepi5) · se flashea a
+una microSD con balenaEtcher.
+
+Tres aclaraciones que ahorran tiempo:
+
+**Raspberry Pi OS no sirve.** Está compilado para los SoC de Broadcom; la Orange Pi 5 usa un
+**Rockchip RK3588S** — otro kernel, otro device tree, otro bootloader, otros drivers. Que
+ambas sean ARM64 no alcanza.
+
+**No cualquier Linux sirve, y la razón no es obvia.** `pyntcore` **solo publica wheels
+precompilados**, sin código fuente de respaldo. Si tu combinación no coincide, `pip` falla
+en seco con *"No matching distribution found"* — sin intentar compilar y sin error que
+investigar. Hacen falta dos cosas:
+
+| Requisito | Por qué |
+|---|---|
+| **Python 3.11+** | No existe wheel de 3.10 para ARM64 |
+| **glibc 2.35+** | Los wheels son `manylinux_2_35` |
+
+Eso descarta Debian 11 (glibc 2.31), Ubuntu 20.04, y varias imágenes de Armbian viejas que
+siguen circulando. Ubuntu 24.04 cumple con holgura: glibc 2.39 y Python 3.12.
+
+**Casi todas las guías de Orange Pi 5 recomiendan `ubuntu-rockchip` de Joshua Riek.** Fue la
+mejor opción durante años, pero **el repositorio se archivó el 29 de abril de 2026**. Si te
+topas con una guía que lo recomienda, es vieja.
+
+> ¿Y Orange Pi OS? También es Linux — es la imagen del propio fabricante. Funciona, pero
+> tiene el problema de casi toda imagen de fabricante: sale una versión y se queda ahí, con
+> el kernel envejeciendo. Armbian lo mantiene una comunidad activa y trae variante minimal,
+> que es lo que quieres en un robot: sin escritorio, menos RAM, arranque más rápido.
+
+Elige la variante **minimal / CLI**, no la de escritorio.
+
 ## Instalar en la Orange Pi
+
+Verifica primero que la imagen cumple, antes de instalar nada:
+
+```bash
+python3 --version   # tiene que ser 3.11 o mayor
+ldd --version       # tiene que ser 2.35 o mayor
+```
+
+Si alguna de las dos no cumple, no sigas: reflashea con una imagen correcta. Es más rápido
+que pelearse con versiones de Python a mano.
 
 ```bash
 sudo apt update && sudo apt install -y python3-venv git
@@ -51,6 +97,16 @@ git clone https://github.com/Salvadrn/lebotics-5948.git ~/lebotics-5948
 python3 -m venv ~/venv
 ~/venv/bin/pip install -r ~/lebotics-5948/orangepi/requirements.txt
 ```
+
+### IP estática
+
+Con `sudo armbian-config` → Network. Ponle una del rango del equipo, por ejemplo
+`10.59.48.20`, para que el servicio no dependa de que haya DHCP.
+
+### Alimentación
+
+**No la conectes directo al bus de 12 V.** Necesita un regulador buck a 5 V. El bus se
+desploma justo en brownout, que es cuando más falta hace que la Pi siga viva.
 
 Probar a mano antes de dejarlo como servicio:
 
