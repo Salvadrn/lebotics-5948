@@ -46,9 +46,13 @@ segundos en vez de en el taller con el robot en bloques.
 
 ## Qué sistema operativo instalarle
 
-**Armbian, Ubuntu 24.04 (Noble), variante CLI / minimal.**
+**Armbian Minimal, Ubuntu 26.04, kernel Current.**
 Descarga: [armbian.com/boards/orangepi5](https://armbian.com/boards/orangepi5) · se flashea a
-una microSD con balenaEtcher.
+una microSD con balenaEtcher. Pesa unos 320 MB.
+
+En la página elige *Manufacturer: Orange Pi* → *Board: Orange Pi 5* → y de la sección
+**Minimal / IoT** la de **Ubuntu 26.04 con etiqueta verde `Current`**. Debian 13 Minimal
+también sirve.
 
 Tres aclaraciones que ahorran tiempo:
 
@@ -67,7 +71,11 @@ investigar. Hacen falta dos cosas:
 | **glibc 2.35+** | Los wheels son `manylinux_2_35` |
 
 Eso descarta Debian 11 (glibc 2.31), Ubuntu 20.04, y varias imágenes de Armbian viejas que
-siguen circulando. Ubuntu 24.04 cumple con holgura: glibc 2.39 y Python 3.12.
+siguen circulando. Ubuntu 26.04 y Debian 13 cumplen de sobra.
+
+Verificado contra PyPI: `pyntcore 2026.2.2` publica wheels `manylinux_2_35_aarch64` para
+**Python 3.11, 3.12, 3.13 y 3.14**. Hay `cp310` para macOS pero **no** para Linux aarch64 —
+por eso Python 3.10 falla en la Pi y no en la laptop.
 
 **Casi todas las guías de Orange Pi 5 recomiendan `ubuntu-rockchip` de Joshua Riek.** Fue la
 mejor opción durante años, pero **el repositorio se archivó el 29 de abril de 2026**. Si te
@@ -78,7 +86,22 @@ topas con una guía que lo recomienda, es vieja.
 > el kernel envejeciendo. Armbian lo mantiene una comunidad activa y trae variante minimal,
 > que es lo que quieres en un robot: sin escritorio, menos RAM, arranque más rápido.
 
-Elige la variante **minimal / CLI**, no la de escritorio.
+### Minimal, y kernel Current
+
+**Minimal y no escritorio.** Las imágenes con GNOME o KDE pesan 1.2–1.5 GB contra los 320 MB
+de la minimal, y todo eso es entorno gráfico que nadie va a ver: la Pi vive atornillada
+dentro del robot, sin monitor.
+
+**Kernel `Current` y no `Vendor`.** Armbian ofrece dos:
+
+| | Qué es | Cuándo conviene |
+|---|---|---|
+| **Vendor** (6.1.x) | Kernel BSP de Rockchip. Más viejo, pero con todos los drivers del RK3588: **NPU**, GPU Mali, codecs de video | Si van a correr **PhotonVision con detección de objetos**, que usa la NPU |
+| **Current** (6.18.x) | Kernel mainline, mucho más nuevo y mejor mantenido | Todo lo demás |
+
+Aquí solo corre Python y una conexión de red — ni NPU ni GPU ni video. Con eso el mainline
+gana por todos lados. Si algún día se deciden por PhotonVision, ahí sí hay que cambiar al
+Vendor.
 
 ## Instalar en la Orange Pi
 
