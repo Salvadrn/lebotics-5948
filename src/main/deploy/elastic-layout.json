@@ -83,7 +83,7 @@
             "title": "ESTADO DEL TIRO",
             "x": 0.0,
             "y": 384.0,
-            "width": 768.0,
+            "width": 512.0,
             "height": 128.0,
             "type": "Text Display",
             "properties": {
@@ -91,6 +91,23 @@
               "period": 0.06,
               "data_type": "string",
               "show_submit_button": false
+            }
+          },
+          {
+            "title": "CAMPO RELATIVO",
+            "x": 512.0,
+            "y": 384.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/SmartDashboard/Drivetrain/FieldRelativeActivo",
+              "period": 0.06,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "None",
+              "false_icon": "Exclamation Point"
             }
           },
           {
@@ -558,6 +575,23 @@
               "false_color": 4294198070,
               "true_icon": "None",
               "false_icon": "Exclamation Point"
+            }
+          },
+          {
+            "title": "Giroscopio: falla latcheada",
+            "x": 1024.0,
+            "y": 1536.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/SmartDashboard/Drivetrain/FallaGiroscopio",
+              "period": 0.1,
+              "data_type": "boolean",
+              "true_color": 4294942720,
+              "false_color": 4283215696,
+              "true_icon": "Exclamation Point",
+              "false_icon": "None"
             }
           }
         ]

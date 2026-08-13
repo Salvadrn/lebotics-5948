@@ -125,6 +125,29 @@ No se lee de reojo. Se lee cuando algo de arriba está en rojo y quieres saber p
 Los tres últimos son accionables en el momento: **acércate o aléjate**. Por eso el texto está
 en la pestaña de partido y no en pits.
 
+### CAMPO RELATIVO — foco
+
+`Drivetrain/FieldRelativeActivo`
+
+**Verde:** "adelante" es adelante en la cancha, sin importar hacia dónde vea el robot. Es
+como se maneja normalmente.
+
+**Rojo:** se cayó el giroscopio y el chasis se pasó solo a **robot-relative**. Ahora
+"adelante" es la nariz del robot. El stick sigue funcionando, pero significa otra cosa: si
+el robot está atravesado, empujar el stick hacia arriba lo manda de lado.
+
+Es el único foco de la tira que exige **cambiar cómo manejas en ese instante**, no revisar
+algo después. Se siente peor y es a propósito: el robot va a donde el stick apunta, en vez
+de a donde un heading muerto diga.
+
+Este foco no existía hasta que Chasis metió el fallback, y no se puso antes a propósito.
+Avisar "se cayó el giroscopio" sin que el código reaccione solo le informa al piloto que ya
+perdió el control. El aviso sirve porque ahora viene con un cambio de comportamiento real
+detrás.
+
+`Drivetrain/FallaGiroscopio` queda en Pits: es la versión latcheada — "esto pasó en algún
+momento del partido" — que es lo que se revisa entre matches.
+
 ### VE EL TAG — foco
 
 `Piloto/VeTag`
@@ -217,6 +240,31 @@ mano se puede, pero un error de formato hace que Elastic falle al cargarlo, y ah
 tiempo de pits.
 
 Las coordenadas están en píxeles y la retícula es de 128, así que todo es múltiplo de 128.
+
+## Antes de commitear un cambio al dashboard
+
+```bash
+python3 tools/revisar-dashboard.py
+```
+
+Revisa las dos cosas que **fallan calladas** — las que no se ven como error hasta que ya
+estás en competencia:
+
+1. **Que ningún widget apunte a una clave que nadie publica.** Un topic mal escrito no da
+   error: da una caja en blanco a media competencia. Compara los 55 widgets contra las
+   claves que el código realmente le manda a `SmartDashboard`, incluidas las que se arman con
+   prefijo por módulo.
+2. **Que ninguna bandera de calibración se quede fuera del foco agregado.** Si alguien
+   agrega una `constexpr bool k…Medida` en `Constants.h` y se le olvida registrarla en
+   `kCalibrationFlags`, **FALTA CALIBRAR se queda en verde diciendo que ya está todo
+   medido**. Eso es peor que no tener el foco: es un indicador que miente.
+
+También verifica que nada se encime y que todo caiga en la retícula. Sale con 1 si algo está
+mal, así que sirve tal cual en un hook o en CI.
+
+Si agregas una bandera de calibración nueva, el chequeo te va a reclamar hasta que la
+registres. Es a propósito: el foco agregado es más útil que ocho focos sueltos, pero solo
+mientras nadie se le olvide alimentarlo, y eso no puede depender de que alguien se acuerde.
 
 ## Lo que cuesta publicar
 
