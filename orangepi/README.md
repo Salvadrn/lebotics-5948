@@ -26,6 +26,7 @@ control detrás, está en [`../docs/10-coprocesador.md`](../docs/10-coprocesador
 | `trajectory.py` | La matemática. **No importa NetworkTables** — se prueba sin robot |
 | `trajectory_server.py` | El transporte: escucha por NT, responde |
 | `test_local.py` | Pruebas de la matemática, corren en cualquier laptop |
+| `test_protocol.py` | Prueba el ida y vuelta real levantando un servidor NT |
 | `requirements.txt` | `pyntcore` y `numpy`, nada más |
 | `lebotics-trajectory.service` | Para que arranque solo al encender la Pi |
 
@@ -132,16 +133,13 @@ journalctl -u lebotics-trajectory -f
 El roboRIO es el **servidor** de NetworkTables; la Pi es **cliente**. La IP del rio del
 equipo 5948 es `10.59.48.2`.
 
-A la Pi conviene ponerle IP estática en el rango del equipo — `10.59.48.20`, por ejemplo —
-para que el servicio no dependa de que haya DHCP.
-
 ## El protocolo
 
 Arreglos planos de `double`, sin JSON y sin structs. Feo a la vista, pero imposible de
 desincronizar en silencio entre dos lenguajes distintos: si el layout no cuadra, se nota
 de inmediato en vez de decodificar basura con cara de dato válido.
 
-**Petición** — `/Bridge/Request`, el rio publica:
+**Petición** — `/Bridge/Request`, el rio publica, **13 valores**:
 
 | Índice | Campo |
 |---|---|
@@ -151,6 +149,7 @@ de inmediato en vez de decodificar basura con cara de dato válido.
 | 7–9 | pose meta: `x`, `y`, `theta` |
 | 10 | velocidad máxima |
 | 11 | aceleración máxima |
+| 12 | **radio del chasis** |
 
 **Respuesta** — `/Bridge/Response`, la Pi publica:
 
