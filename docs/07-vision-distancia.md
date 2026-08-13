@@ -133,8 +133,13 @@ con cinta, entonces el pitch es **lo único que falta** en la ecuación y se des
 pitch = atan(Δh / distancia_real) − ty
 ```
 
-El código ya calcula esto solo. En el dashboard, mientras el robot está encendido y viendo
-un tag:
+El código ya calcula esto solo. En el dashboard, con el robot **encendido y deshabilitado**
+y viendo un tag:
+
+> Las llaves `Vision/Calib/*` **solo se publican con el robot deshabilitado**. No es un
+> descuido: son 50 Hz de promedios y desviaciones que nadie mira en partido, y esto es un
+> roboRIO 1. Al habilitar, todas se van a `-1` y el promedio se reinicia. Para calibrar no
+> hace falta habilitar — el Limelight reporta igual.
 
 0. Confirmen que **`Vision/Calib/AlturaCamaraPulgadas`** tiene la altura que midieron en el
    paso 1, no los 24 in de fábrica.
@@ -361,6 +366,12 @@ el orden del arreglo antes de confiar en la fusión de pose.
 en cada ciclo, con o sin tag: si la cámara pierde el blanco, se van a `-1` en vez de
 quedarse congeladas con el último valor bueno. Un número viejo que parece vivo es la forma
 más fácil de calibrar contra nada.
+
+**Las `Vision/Calib/*` viven solo en disabled.** Las de arriba (`Vision/VeTag`,
+`Vision/DistanciaMetros`, `Vision/TagID`…) se publican siempre, porque sirven en partido.
+Las de calibración no: al habilitar se van a `-1` una vez y dejan de calcularse hasta que
+vuelvan a deshabilitar. Son promedios y desviaciones sobre 50 muestras a 50 Hz que solo se
+miran con el robot en bloques, y el CPU de un roboRIO 1 se nota.
 
 El promedio se reinicia solo cuando cambian `DistanciaRealMetros` o cuando la cámara cambia
 a **otro** tag. No hay que apretar nada entre estaciones, y perder el tag un par de cuadros

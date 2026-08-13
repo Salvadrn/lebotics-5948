@@ -3,6 +3,7 @@
 #include <cmath>
 #include <vector>
 
+#include <frc/DriverStation.h>
 #include <frc/Timer.h>
 #include <frc/geometry/Rotation2d.h>
 #include <frc/smartdashboard/SmartDashboard.h>
@@ -114,7 +115,30 @@ void Vision::ResetCalibration() {
   m_sampleIndex = 0;
 }
 
+void Vision::PublishCalibrationIdle() {
+  frc::SmartDashboard::PutNumber("Vision/Calib/Muestras", 0.0);
+  frc::SmartDashboard::PutNumber("Vision/Calib/TyPromedioGrados", kSinDato);
+  frc::SmartDashboard::PutNumber("Vision/Calib/TyDesviacionGrados", kSinDato);
+  frc::SmartDashboard::PutBoolean("Vision/Calib/Centrado", false);
+  frc::SmartDashboard::PutNumber("Vision/Calib/PitchImplicadoGrados", kSinDato);
+  frc::SmartDashboard::PutNumber("Vision/Calib/AlturaImplicadaPulgadas",
+                                 kSinDato);
+  frc::SmartDashboard::PutNumber("Vision/Calib/ErrorMetros", kSinDato);
+}
+
 void Vision::UpdateCalibration() {
+  if (!frc::DriverStation::IsDisabled()) {
+    if (m_calibrationLive) {
+      ResetCalibration();
+      m_calibrationTagId = -1;
+      PublishCalibrationIdle();
+      m_calibrationLive = false;
+    }
+    return;
+  }
+
+  m_calibrationLive = true;
+
   const double realDistance =
       frc::SmartDashboard::GetNumber(kCalibDistanceKey, 0.0);
   const int tagId = m_lastTarget ? m_lastTarget->tagId : m_calibrationTagId;
@@ -135,20 +159,13 @@ void Vision::UpdateCalibration() {
     }
   }
 
-  frc::SmartDashboard::PutNumber("Vision/Calib/Muestras",
-                                 static_cast<double>(m_sampleCount));
-
   if (m_sampleCount == 0) {
-    frc::SmartDashboard::PutNumber("Vision/Calib/TyPromedioGrados", kSinDato);
-    frc::SmartDashboard::PutNumber("Vision/Calib/TyDesviacionGrados", kSinDato);
-    frc::SmartDashboard::PutBoolean("Vision/Calib/Centrado", false);
-    frc::SmartDashboard::PutNumber("Vision/Calib/PitchImplicadoGrados",
-                                   kSinDato);
-    frc::SmartDashboard::PutNumber("Vision/Calib/AlturaImplicadaPulgadas",
-                                   kSinDato);
-    frc::SmartDashboard::PutNumber("Vision/Calib/ErrorMetros", kSinDato);
+    PublishCalibrationIdle();
     return;
   }
+
+  frc::SmartDashboard::PutNumber("Vision/Calib/Muestras",
+                                 static_cast<double>(m_sampleCount));
 
   double sum = 0.0;
   for (size_t i = 0; i < m_sampleCount; i++) {

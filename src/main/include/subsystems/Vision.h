@@ -51,6 +51,7 @@ class Vision : public frc2::SubsystemBase {
  private:
   void PublishTelemetry();
   void UpdateCalibration();
+  void PublishCalibrationIdle();
   std::optional<VisionTarget> ReadTarget();
   units::meter_t CalibrationCameraHeight() const;
 
@@ -64,4 +65,5 @@ class Vision : public frc2::SubsystemBase {
   std::size_t m_sampleIndex = 0;
   double m_calibrationDistance = 0.0;
   int m_calibrationTagId = -1;
+  bool m_calibrationLive = true;
 };
