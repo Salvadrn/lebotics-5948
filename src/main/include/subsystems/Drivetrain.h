@@ -46,6 +46,13 @@ class Drivetrain : public frc2::SubsystemBase {
   double GetVoltageScale() const { return m_voltageScale; }
   bool IsGyroConnected();
 
+  // Velocidad actual del chasis medida en los modulos, no la que se comando.
+  // El puente de trayectorias la manda como velocidad inicial para que la Pi
+  // genere una curva que empalme con el movimiento real del robot en vez de
+  // asumir que esta detenido.
+  frc::ChassisSpeeds GetRobotRelativeSpeeds();
+  frc::ChassisSpeeds GetFieldRelativeSpeeds();
+
   // En que modo se esta manejando de verdad. Si el giroscopio murio esto dice
   // false aunque el piloto haya pedido field-relative.
   bool IsFieldRelativeActive() const { return m_fieldRelativeActive; }

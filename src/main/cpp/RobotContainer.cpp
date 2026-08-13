@@ -116,6 +116,11 @@ frc2::CommandPtr RobotContainer::AutoAimCommand() {
       });
 }
 
+void RobotContainer::UpdateTrajectoryBridge() {
+  m_bridge.Poll(m_drivetrain.GetPose());
+  m_bridge.PublishTelemetry();
+}
+
 void RobotContainer::UpdateVisionFusion() {
   const auto estimate = m_vision.GetEstimatedPose();
   if (estimate) {

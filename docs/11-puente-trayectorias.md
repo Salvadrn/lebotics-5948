@@ -160,6 +160,20 @@ cd orangepi && python3 test_local.py
 
 31 pruebas, solo necesitan numpy.
 
+**El protocolo completo, sin robot:**
+
+```bash
+cd orangepi && python3 test_protocol.py --solo
+```
+
+Levanta un servidor de NetworkTables haciendo el papel del roboRIO, arranca el servidor de
+trayectorias contra él, y verifica el ida y vuelta real. Necesita `pyntcore`.
+
+Esto prueba lo que `test_local.py` no puede: el encuadre del mensaje, que el `requestId`
+regrese correcto, que dos peticiones seguidas no se colapsen, y que una petición inválida
+obtenga un error **inmediato** en vez de un silencio — que del lado del rio se ve idéntico a
+un timeout, y manda a depurar la red cuando el problema era el payload.
+
 **El servicio contra la Pi:**
 
 ```bash
@@ -175,17 +189,36 @@ cd orangepi && python3 test_local.py
 | `Puente/Puntos` · `Puente/DuracionSegundos` | La trayectoria que se recibió |
 | `Puente/StatusDelSolver` | Lo que reportó la Pi |
 
-## Lo que falta
+## Seguir la trayectoria
 
-El puente entrega la trayectoria; **todavía no hay comando que la siga**. Eso toca
-`Drivetrain` y es territorio de la sesión Autónomo.
+`FollowBridgedTrajectory` es el comando que la ejecuta. Tres etapas: **pide, espera,
+sigue**.
 
-Una advertencia para quien lo escriba: si usan un `ProfiledPIDController` para el heading,
-**hay que llamar `Reset(heading_actual)` en `Initialize()`**. Sin eso el primer ciclo pide
-un omega absurdo — medido con un error de solo 5°: `-3.365 rad/s` sin `Reset()` contra
-`0.824 rad/s` con él. Factor de cuatro **y signo contrario**.
+Mientras espera, **el robot no se mueve**. Es un comando de autónomo, y quedarse quieto
+medio segundo es mucho mejor que arrancar a ciegas.
 
-Y si usan `HolonomicDriveController`: su `trajectoryPose.Rotation()` es la **dirección de
-avance**, no el heading del robot. El heading va en el tercer argumento de `Calculate()`.
-Meter el heading en la pose hace que el feedforward empuje hacia donde el robot mira en vez
-de hacia donde va.
+El seguidor suma **feedforward más corrección**: la velocidad que trae cada muestra es a
+dónde la trayectoria dice que hay que ir, y el PID solo corrige la diferencia entre dónde
+debería estar el robot y dónde está. Sin el feedforward, el PID tendría que generar todo el
+movimiento a base de error e iría siempre atrasado.
+
+El cronómetro **solo arranca cuando la trayectoria ya llegó**, no en `Initialize()`. Si
+corriera desde el principio, el tiempo que la Pi tardó en contestar se descontaría de la
+trayectoria y el robot empezaría a media curva.
+
+### Dos trampas del seguidor, evitadas por diseño
+
+**Se usa `PIDController` y no `ProfiledPIDController`.** El perfilado ya lo hizo la Pi, así
+que no hace falta — y de paso se esquiva una mina: un `ProfiledPIDController` exige
+`Reset(heading_actual)` en `Initialize()`, y sin eso el primer ciclo pide un omega absurdo.
+Medido con un error de solo 5°: **−3.365 rad/s** sin `Reset()` contra **0.824 rad/s** con
+él. Factor de cuatro **y signo contrario**.
+
+**No se usa `HolonomicDriveController`.** Su `trajectoryPose.Rotation()` es la **dirección
+de avance**, no el heading del robot — el heading va en el tercer argumento de
+`Calculate()`. Meter el heading en la pose hace que el feedforward empuje hacia donde el
+robot mira en vez de hacia donde va. Como nuestras muestras ya traen `vx`, `vy` y `omega`
+explícitas, no hace falta ese controlador para nada.
+
+**Y si el giroscopio está caído, el comando aborta antes de pedir nada.** Seguir una
+trayectoria necesita saber hacia dónde ve el robot; con el navX muerto la pose es ficción.

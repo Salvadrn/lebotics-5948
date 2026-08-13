@@ -225,6 +225,17 @@ void Drivetrain::Drive(units::meters_per_second_t xSpeed,
   DriveRobotRelative(speeds);
 }
 
+frc::ChassisSpeeds Drivetrain::GetRobotRelativeSpeeds() {
+  return m_kinematics.ToChassisSpeeds(
+      {m_frontLeft.GetState(), m_frontRight.GetState(), m_backLeft.GetState(),
+       m_backRight.GetState()});
+}
+
+frc::ChassisSpeeds Drivetrain::GetFieldRelativeSpeeds() {
+  return frc::ChassisSpeeds::FromRobotRelativeSpeeds(GetRobotRelativeSpeeds(),
+                                                     GetHeading());
+}
+
 void Drivetrain::DriveRobotRelative(const frc::ChassisSpeeds& speeds) {
   const frc::ChassisSpeeds discretized =
       frc::ChassisSpeeds::Discretize(speeds, 20_ms);

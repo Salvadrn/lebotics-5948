@@ -12,6 +12,7 @@
 #include "subsystems/Hood.h"
 #include "subsystems/Turret.h"
 #include "subsystems/Vision.h"
+#include "util/TrajectoryBridge.h"
 
 class RobotContainer {
  public:
@@ -19,6 +20,11 @@ class RobotContainer {
 
   std::optional<frc2::CommandPtr> GetAutonomousCommand();
   void UpdateVisionFusion();
+
+  // El puente hay que drenarlo cada ciclo aunque nadie este pidiendo nada: ahi
+  // es donde se leen los latidos de la Pi, y sin eso IsCoprocessorAlive()
+  // siempre diria que esta muerta.
+  void UpdateTrajectoryBridge();
 
  private:
   void ConfigureBindings();
@@ -35,6 +41,8 @@ class RobotContainer {
   Turret m_turret;
   Vision m_vision;
   Hood m_hood;
+
+  TrajectoryBridge m_bridge;
 
   AutoRoutines m_autos{m_drivetrain};
 
