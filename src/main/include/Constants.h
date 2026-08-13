@@ -67,6 +67,11 @@ inline constexpr units::meters_per_second_t kMaxSpeed = units::meters_per_second
 inline const units::radians_per_second_t kMaxAngularSpeed =
     units::radians_per_second_t{kMaxSpeed.value() / kDriveBaseRadius.value()};
 
+// Ciclos seguidos sin giroscopio antes de caer a robot-relative. A 20 ms por
+// ciclo son 100 ms. No es cero a proposito: un parpadeo de un ciclo cambiando
+// el modo de manejo a media curva es peor que el problema que resuelve.
+inline constexpr int kGyroLostCyclesToLatch = 5;
+
 inline constexpr units::meters_per_second_squared_t kMaxAcceleration = 8_mps_sq;
 inline constexpr units::radians_per_second_squared_t kMaxAngularAcceleration{
     20.0};

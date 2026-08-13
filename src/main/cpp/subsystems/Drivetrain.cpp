@@ -79,8 +79,28 @@ wpi::array<frc::SwerveModulePosition, 4> Drivetrain::GetModulePositions() {
 
 void Drivetrain::Periodic() {
   m_poseEstimator.Update(GetHeading(), GetModulePositions());
+  UpdateGyroHealth();
   UpdateVoltageGuard();
   PublishTelemetry();
+}
+
+// El giroscopio es la unica pieza que puede fallar sin que el robot deje de
+// obedecer. Si se pierde, GetHeading() se queda congelado en el ultimo valor y
+// FromFieldRelativeSpeeds sigue rotando las velocidades con ese angulo muerto:
+// el robot responde al stick con toda normalidad, pero "adelante" apunta a
+// donde estaba viendo cuando murio. El piloto se entera chocando.
+void Drivetrain::UpdateGyroHealth() {
+  if (IsGyroConnected()) {
+    m_gyroLostCycles = 0;
+    return;
+  }
+
+  if (m_gyroLostCycles < constants::drivetrain::kGyroLostCyclesToLatch) {
+    ++m_gyroLostCycles;
+    return;
+  }
+
+  m_gyroFailureLatched = true;
 }
 
 void Drivetrain::UpdateVoltageGuard() {
@@ -115,6 +135,10 @@ void Drivetrain::PublishTelemetry() {
                                  GetTotalDriveCurrent().value());
   frc::SmartDashboard::PutBoolean("Drivetrain/GiroscopioConectado",
                                   IsGyroConnected());
+  frc::SmartDashboard::PutBoolean("Drivetrain/FieldRelativeActivo",
+                                  m_fieldRelativeActive);
+  frc::SmartDashboard::PutBoolean("Drivetrain/FallaGiroscopio",
+                                  m_gyroFailureLatched);
   frc::SmartDashboard::PutNumber("Drivetrain/HeadingGrados",
                                  GetHeading().Degrees().value());
 
@@ -189,10 +213,15 @@ void Drivetrain::Drive(units::meters_per_second_t xSpeed,
                        units::meters_per_second_t ySpeed,
                        units::radians_per_second_t rotation,
                        bool fieldRelative) {
+  // Sin giroscopio confiable se maneja robot-relative aunque el piloto haya
+  // pedido field-relative. Se siente peor, pero es honesto: el robot va a donde
+  // el stick apunta en vez de a donde un heading muerto diga.
+  m_fieldRelativeActive = fieldRelative && !m_gyroFailureLatched;
+
   const frc::ChassisSpeeds speeds =
-      fieldRelative ? frc::ChassisSpeeds::FromFieldRelativeSpeeds(
-                          xSpeed, ySpeed, rotation, GetHeading())
-                    : frc::ChassisSpeeds{xSpeed, ySpeed, rotation};
+      m_fieldRelativeActive ? frc::ChassisSpeeds::FromFieldRelativeSpeeds(
+                                  xSpeed, ySpeed, rotation, GetHeading())
+                            : frc::ChassisSpeeds{xSpeed, ySpeed, rotation};
   DriveRobotRelative(speeds);
 }
 
@@ -225,9 +254,19 @@ void Drivetrain::StopAll() {
 }
 
 void Drivetrain::ZeroHeading() {
-  if (!m_gyro.IsCalibrating()) {
-    m_gyro.ZeroYaw();
+  if (m_gyro.IsCalibrating() || !IsGyroConnected()) {
+    return;
   }
+
+  m_gyro.ZeroYaw();
+
+  // Unico lugar donde se suelta el enganche de falla. Es a proposito que sea
+  // aqui: al reconectarse, el navX arranca su yaw en cero desde donde quedo
+  // apuntando, asi que "ya volvio" no implica que su heading valga. Volver solo
+  // a field-relative con ese heading seria peor que seguir degradado. Poner el
+  // norte de nuevo y reconocer la falla son el mismo gesto.
+  m_gyroFailureLatched = false;
+  m_gyroLostCycles = 0;
 }
 
 frc::Rotation2d Drivetrain::GetHeading() { return m_gyro.GetRotation2d(); }

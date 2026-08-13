@@ -46,6 +46,16 @@ class Drivetrain : public frc2::SubsystemBase {
   double GetVoltageScale() const { return m_voltageScale; }
   bool IsGyroConnected();
 
+  // En que modo se esta manejando de verdad. Si el giroscopio murio esto dice
+  // false aunque el piloto haya pedido field-relative.
+  bool IsFieldRelativeActive() const { return m_fieldRelativeActive; }
+
+  // Enganchado en true desde que el giroscopio se perdio. NO se limpia solo
+  // cuando vuelve: al reconectarse el navX arranca su yaw en cero desde donde
+  // este apuntando, asi que "volvio" no significa "su heading sirve". Solo lo
+  // limpia ZeroHeading(), o sea el piloto apretando A a proposito.
+  bool IsGyroFailureLatched() const { return m_gyroFailureLatched; }
+
   frc2::CommandPtr TeleopDrive(std::function<double()> forward,
                                std::function<double()> strafe,
                                std::function<double()> rotate,
@@ -56,6 +66,7 @@ class Drivetrain : public frc2::SubsystemBase {
  private:
   wpi::array<frc::SwerveModulePosition, 4> GetModulePositions();
   void UpdateVoltageGuard();
+  void UpdateGyroHealth();
   void PublishTelemetry();
   void PublishCalibrationTelemetry();
 
@@ -75,4 +86,8 @@ class Drivetrain : public frc2::SubsystemBase {
 
   double m_voltageScale = 1.0;
   int m_calibrationDivider = 0;
+
+  bool m_fieldRelativeActive = true;
+  bool m_gyroFailureLatched = false;
+  int m_gyroLostCycles = 0;
 };
