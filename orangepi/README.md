@@ -29,6 +29,7 @@ control detrás, está en [`../docs/10-coprocesador.md`](../docs/10-coprocesador
 | `test_protocol.py` | Prueba el ida y vuelta real levantando un servidor NT |
 | `requirements.txt` | `pyntcore` y `numpy`, nada más |
 | `lebotics-trajectory.service` | Para que arranque solo al encender la Pi |
+| `instalar.sh` | Instalador **sin internet**: verifica la imagen e instala de wheels locales |
 
 Que `trajectory.py` no importe NetworkTables es a propósito: el ciclo "editar, subir a la
 Pi, encender el robot, probar" es demasiado lento para depurar matemáticas.
@@ -102,6 +103,65 @@ dentro del robot, sin monitor.
 Aquí solo corre Python y una conexión de red — ni NPU ni GPU ni video. Con eso el mainline
 gana por todos lados. Si algún día se deciden por PhotonVision, ahí sí hay que cambiar al
 Vendor.
+
+## Cómo meterle los archivos si no hay red
+
+La Pi necesita dos cosas: el **código** (que está en GitHub) y las **librerías**
+`pyntcore` y `numpy` (que están en PyPI). Si la red del lugar bloquea SSH o no hay internet
+en la Pi, hay tres caminos.
+
+### Cable Ethernet directo — el bueno
+
+Conecta la Pi a la laptop con un cable Ethernet. Eso crea un enlace privado entre las dos
+que **no pasa por el WiFi del lugar**, así que un bloqueo de SSH en esa red no aplica. La
+laptop le comparte internet (macOS: Ajustes → General → Compartir → Compartir Internet).
+
+Lo mejor: **es exactamente como la Pi se conecta al roboRIO en el robot.** No es un
+workaround, es practicar la topología real.
+
+### Kit sin internet — cuando no hay cable
+
+Se prepara en la laptop y se copia a la Pi con una USB. La Pi **nunca necesita internet**.
+
+```bash
+# En la laptop, una sola vez:
+pip download pyntcore --platform manylinux_2_34_aarch64 --platform manylinux_2_35_aarch64 \
+    --only-binary=:all: --python-version 3.13 -d kit/wheels
+pip download numpy --platform manylinux_2_28_aarch64 \
+    --only-binary=:all: --python-version 3.13 -d kit/wheels
+cp -R orangepi kit/codigo
+cp orangepi/instalar.sh kit/
+```
+
+Copias `kit/` a una USB, la metes a la Pi, y ahí:
+
+```bash
+bash instalar.sh
+```
+
+`instalar.sh` verifica Python y glibc **antes** de tocar nada, instala con `--no-index` para
+que no intente salir a internet, y corre las pruebas al final.
+
+> **Dos trampas de `pip download` que cuestan una hora si no las sabes.**
+>
+> **Los paquetes de robotpy no usan todos la misma etiqueta de manylinux.** `pyntcore`,
+> `robotpy-wpiutil` y `robotpy-wpinet` son `manylinux_2_35`, pero `robotpy-native-ntcore` es
+> **`manylinux_2_34`**. Con `--platform` explícito pip exige coincidencia **exacta** y no
+> aplica compatibilidad hacia atrás, así que pedir solo `2_35` falla con
+> `ResolutionImpossible` — y el mensaje no dice cuál paquete fue. Hay que pasar **las dos**.
+>
+> **numpy tampoco es uniforme:** las versiones para Python 3.12 y 3.13 son `manylinux_2_17`,
+> pero las de 3.14 son `manylinux_2_27/2_28`. Por eso se descarga **aparte** de pyntcore, con
+> su propia etiqueta.
+>
+> En la Pi esto no se nota: pip nativo sí resuelve la compatibilidad solo. El problema existe
+> únicamente al descargar de forma cruzada desde otra plataforma.
+
+### Consola serial (UART) — para el primer arranque
+
+Un adaptador USB-a-TTL a los pines de debug de la Pi da una terminal **sin red de ninguna
+clase**. Es la forma de entrar cuando todavía no hay IP configurada, y sirve para ponerle la
+IP estática antes de conectarla a nada.
 
 ## Instalar en la Orange Pi
 
